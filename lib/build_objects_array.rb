@@ -17,11 +17,13 @@ def build_objects_array(options = {})
   base_tags      = metadata.fetch('base_tags',      default_metadata['base_tags'])
   base_vars      = metadata.fetch('base_vars',      default_metadata['base_vars'])
   build_image    = metadata.fetch('build',          default_metadata['build'])
+  build_platform = metadata.fetch('build_platform', default_metadata['build_platform'])
   image_name     = metadata.fetch('image_name',     default_metadata['image_name'])
   labels         = metadata.fetch('labels',         default_metadata['labels'])
   maintainer     = metadata.fetch('maintainer',     default_metadata['maintainer'])
   push_image     = metadata.fetch('push',           default_metadata['push'])
   registries     = metadata.fetch('registries',     default_metadata['registries'])
+  tag_build_id   = metadata.fetch('tag_build_id',   default_metadata['tag_build_id'])
   tag_image      = metadata.fetch('tag',            default_metadata['tag'])
   tags           = metadata.fetch('tags',           default_metadata['tags']) + base_tags
   template_files = metadata.fetch('template_files', default_metadata['template_files'])
@@ -44,12 +46,14 @@ def build_objects_array(options = {})
     version_variants       = version_params['variants'].nil?       ? {} : version_params['variants']
     version_vars           = version_params['vars'].nil?           ? {} : version_params['vars']
 
-    version_build_image    = version_params['build'].nil?          ? build_image  : version_params['build']
-    version_maintainer     = version_params['maintainer'].nil?     ? maintainer   : version_params['maintainer']
-    version_push_image     = version_params['push'].nil?           ? push_image   : version_params['push']
-    version_tag_image      = version_params['tag'].nil?            ? tag_image    : version_params['tag']
-    version_test_command   = version_params['test_command'].nil?   ? test_command : version_params['test_command']
-    version_test_image     = version_params['test'].nil?           ? test_image   : version_params['test']
+    version_build_image    = version_params['build'].nil?          ? build_image    : version_params['build']
+    version_build_platform = version_params['build_platform'].nil? ? build_platform : version_params['build_platform']
+    version_maintainer     = version_params['maintainer'].nil?     ? maintainer     : version_params['maintainer']
+    version_push_image     = version_params['push'].nil?           ? push_image     : version_params['push']
+    version_tag_build_id   = version_params['tag_build_id'].nil?   ? tag_build_id   : version_params['tag_build_id']
+    version_tag_image      = version_params['tag'].nil?            ? tag_image      : version_params['tag']
+    version_test_command   = version_params['test_command'].nil?   ? test_command   : version_params['test_command']
+    version_test_image     = version_params['test'].nil?           ? test_image     : version_params['test']
 
     variants   = variants.deep_merge(version_variants)
 
@@ -62,12 +66,14 @@ def build_objects_array(options = {})
       variant_variants       = variant_params['variants'].nil?       ? {} : variant_params['variants']
       variant_vars           = variant_params['vars'].nil?           ? {} : variant_params['vars']
 
-      variant_build_image    = variant_params['build'].nil?        ? version_build_image  : variant_params['build']
-      variant_maintainer     = variant_params['maintainer'].nil?   ? version_maintainer   : variant_params['maintainer']
-      variant_push_image     = variant_params['push'].nil?         ? version_push_image   : variant_params['push']
-      variant_tag_image      = variant_params['tag'].nil?          ? version_tag_image    : variant_params['tag']
-      variant_test_command   = variant_params['test_command'].nil? ? version_test_command : variant_params['test_command']
-      variant_test_image     = variant_params['test'].nil?         ? version_test_image   : variant_params['test']
+      variant_build_image    = variant_params['build'].nil?          ? version_build_image    : variant_params['build']
+      variant_build_platform = variant_params['build_platform'].nil? ? version_build_platform : variant_params['build_platform']
+      variant_maintainer     = variant_params['maintainer'].nil?     ? version_maintainer     : variant_params['maintainer']
+      variant_push_image     = variant_params['push'].nil?           ? version_push_image     : variant_params['push']
+      variant_tag_build_id   = variant_params['tag_build_id'].nil?   ? version_tag_build_id   : variant_params['tag_build_id']
+      variant_tag_image      = variant_params['tag'].nil?            ? version_tag_image      : variant_params['tag']
+      variant_test_command   = variant_params['test_command'].nil?    ? version_test_command   : variant_params['test_command']
+      variant_test_image     = variant_params['test'].nil?           ? version_test_image     : variant_params['test']
 
       merged_registries = merge_registries(registries, version_registries, variant_registries)
       merged_registries = merged_registries.empty? ? [{ url: '', org_name: '' }] : merged_registries
@@ -75,13 +81,15 @@ def build_objects_array(options = {})
       # make sure test_command isn't nil
       test_command = test_command.nil?                   ? ''           : test_command
 
-      objects_array << DockerImage.new(
+    objects_array << ContainerImage.new(
         build_image: variant_build_image,
+        build_platform: variant_build_platform,
         image_name: image_name,
         labels: base_labels.deep_merge(labels).deep_merge(version_labels).deep_merge(variant_labels),
         maintainer: variant_maintainer,
         push_image: variant_push_image,
         registries: merged_registries,
+        tag_build_id: variant_tag_build_id,
         tag_image: variant_tag_image,
         tags: (tags + version_tags + variant_tags).uniq,
         template_files: (template_files + version_template_files + variant_template_files).uniq,

@@ -1,14 +1,33 @@
-# docker-rakefile
+# crucible
 
-Rakefile and libraries for managing Docker image builds
+Rakefile and libraries for managing container image builds with Podman.
+
+Forked from [docker-rakefile](https://github.com/itsbcit/docker-rakefile). If you need Docker support, use the original project.
+
+## Requirements
+
+- **Ruby** with `rake`
+- **Podman** (builds use `podman build`, which runs buildah internally)
+
+### macOS setup
+
+```bash
+brew install podman
+podman machine init
+podman machine start
+```
+
+### Linux
+
+Install Podman via your package manager. See [podman.io/docs/installation](https://podman.io/docs/installation).
 
 ## How to use
 
-### New Docker image repositories
+### New container image repositories
 
 Click "Use this template" (green button) in the [docker-template](https://github.com/itsbcit/docker-template) GitHub repository to create a new templated GitHub repository. You must be logged-in to GitHub to see this option.
 
-### Existing Docker image repositories
+### Existing container image repositories
 
 Update the Rakefile and support library in the existing code with [rake update](#update).
 
@@ -23,8 +42,6 @@ Update `.gitignore` to exclude the Rakefile library and `.build_id` marker file.
 lib
 ```
 
-Or download from the [docker-template](https://github.com/itsbcit/docker-template/raw/master/.gitignore) git repository.
-
 ### Install Rakefile support files
 
 `Rakefile` can be updated to the latest release version with [`rake update`](#update).
@@ -37,7 +54,7 @@ This will pull the latest release of the `lib` support files from GitHub.
 
 ### Create metadata.yaml
 
-`metadata.yaml` defines the layout and handling of the Docker image(s) in this repository.
+`metadata.yaml` defines the layout and handling of the container image(s) in this repository.
 
 A simple example for an image without versions or variants:
 
@@ -45,8 +62,8 @@ A simple example for an image without versions or variants:
 ---
 image_name: template_test
 registries:
-  - url: docker.io
-    org_name: bcit
+  - url: registry.example.com
+    org_name: myorg
 vars:
   foo_version: '1.2.3'
 ```
@@ -71,28 +88,48 @@ Important: parameters are rendered in the order: vars -> labels -> tags.
 * labels can include vars
 * tags can include vars and labels
 
+### Build platform
+
+By default, all builds target `linux/amd64`. Override per-image in `metadata.yaml`:
+
+```yaml
+build_platform: 'linux/arm64'
+```
+
+Or via environment variable: `BUILD_PLATFORM=linux/arm64 rake build`
+
+### Optional build ID tagging
+
+By default, images are tagged with a build ID suffix (e.g. `image:1.0-b1567100182`). To disable:
+
+```yaml
+tag_build_id: false
+```
+
+This can be set at the top level, per-version, or per-variant.
+
 ### Custom image handling
 
-Any file in `lib` can be overridden by the same file name in `local/`. For example, if you need a custom [test](#test) task, copy `lib/tasks/test.rb` to `local/tasks/test.rb` and modify it.
+Any file in `lib` can be overridden by the same file name in `local/`. For example, if you need a custom [test](#test) task, copy `lib/tasks/test.rake` to `local/tasks/test.rake` and modify it. Test helpers from `lib/test_helpers.rb` are available for composing multi-container test setups.
 
 ### Normal usage workflow
 
 1. Make `Dockerfile` changes in `Dockerfile.erb`
 1. `rake update` to pull down Rakefile and library updates
-1. `rake` (runs [template](#template), [build](#build), [tag](#tag), and [test](#test))
-1. `rake push` to push to Docker Hub (or other repos defined in [`metadata.yaml`](#create-metadatayaml))
+1. `rake` (runs [template](#template), [build](#build), [test](#test), and [tag](#tag))
+1. `rake push` to push to registries defined in [`metadata.yaml`](#create-metadatayaml)
 
 ## Rake tasks
 
 ### install
 
-Install the Rakefile support files from the [latest release](https://github.com/itsbcit/docker-rakefile/releases/latest).
+Install the Rakefile support files from the [latest release](https://github.com/itsbcit/crucible/releases/latest).
 
 `rake install`
 
 ### update
 
-`Rakefile` self-update. Download and overwrite the `Rakefile` and `libs` directory with the [latest release](https://github.com/itsbcit/docker-rakefile/releases/latest)
+`Rakefile` self-update. Download and overwrite the `Rakefile` and `libs` directory with the [latest release](https://github.com/itsbcit/crucible/releases/latest)
 
 `rake update`
 
@@ -106,7 +143,7 @@ Create or overwrite Dockerfile(s) from ERB templates and render any templated fi
 
 ### build
 
-Build the Docker image(s).
+Build the container image(s) using `podman build` (buildah internally).
 
 `rake build`
 
@@ -118,26 +155,38 @@ Add standard and `metadata.yaml` configured tags to the image(s).
 
 Standard tags:
 
-* image_name:b(`build id`) eg. `mybusybox:b1567100182`
+* image_name:b(`build id`) eg. `mybusybox:b1567100182` (unless `tag_build_id: false`)
 * image_name:latest
 
 ### test
 
-Run automated tests against the image(s).
+Run automated tests against the image(s). Uses composable helpers from `lib/test_helpers.rb`.
+
+### patch
+
+Apply security updates to an existing image without a full rebuild.
+
+`rake patch` — patches all images using `apk upgrade --no-cache`
+
+`PATCH_CMD='yum update -y' rake patch` — custom patch command
+
+`PATCH_BASE='myimage:b1567100182' rake patch` — patch a specific build
+
+Produces images tagged with a `-pN` suffix (e.g. `image:b1567100182-p1`).
 
 ### push
 
-Push all images and tags to Docker Hub and/or the repositores configured in `metadata.yaml`.
+Push all images and tags to the registries configured in `metadata.yaml`. Checks for existing Podman credentials before prompting for login.
 
 `rake push`
 
 ### clean
 
-Removes all tags, images, "FROM images" and build context layers from Docker
+Removes all tags, images, "FROM images" and runs `podman system prune`.
 
 ### debug
 
-Shows rendered tags, vars, labels, etc. Use to preview what your metadata will produce.
+Shows rendered tags, vars, labels, platform, and predicted commands. Use to preview what your metadata will produce.
 
 ## metadata.yaml
 
@@ -147,6 +196,8 @@ Sample metadata.yaml with most options used:
 ---
 image_name: php-fpm
 maintainer: 'jesse@weisner.ca, chriswood.ca@gmail.com'
+build_platform: 'linux/amd64'
+tag_build_id: true
 labels:
   php_version: '<%= vars["php_version"] %>'
 vars:
@@ -158,12 +209,12 @@ vars:
 variants:
   'builder':
     registries:
-      - url: docker.io
-        org_name: bcit
+      - url: registry.example.com
+        org_name: myorg
   '':
     registries:
-      - url: docker.io
-        org_name: bcit
+      - url: registry.example.com
+        org_name: myorg
   'oci':
     registries:
       - url: registry.example.com:5000

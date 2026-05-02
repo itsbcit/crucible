@@ -1,34 +1,39 @@
 # frozen_string_literal: true
 
-# Object class DockerImage
-class DockerImage
-  attr_reader :image_name, :template_files, :registries, :variant, :version, :maintainer, :test_command
+# Object class ContainerImage
+class ContainerImage
+  attr_reader :image_name, :template_files, :registries, :variant, :version, :maintainer, :test_command,
+              :build_platform, :tag_build_id
   attr_accessor :build_id
 
   def initialize(
-    build_id:     0,
-    build_image:  true,
+    build_id:       0,
+    build_image:    true,
+    build_platform: 'linux/amd64',
     image_name:,
-    labels:       {},
-    maintainer:   '',
-    push_image:   true,
-    registries:   [],
-    tag_image:    true,
-    tags:         [],
+    labels:         {},
+    maintainer:     '',
+    push_image:     true,
+    registries:     [],
+    tag_build_id:   true,
+    tag_image:      true,
+    tags:           [],
     template_files: {},
-    test_command: '',
-    test_image:   true,
-    variant:      '',
-    vars:         {},
-    version:      ''
+    test_command:   '',
+    test_image:     true,
+    variant:        '',
+    vars:           {},
+    version:        ''
   )
     @build_id           = build_id
     @build_image        = build_image
+    @build_platform     = ENV['BUILD_PLATFORM'] || build_platform
     @image_name         = image_name
     @labels             = labels
     @maintainer         = maintainer
     @push_image         = push_image
     @registries         = registries
+    @tag_build_id       = tag_build_id
     @tag_image          = tag_image
     @tags               = tags
     @template_files     = template_files

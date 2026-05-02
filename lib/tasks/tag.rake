@@ -1,13 +1,8 @@
 # frozen_string_literal: true
 
-desc 'Tag docker/podman images'
+desc 'Tag container images'
 task :tag do
-  # check that the build system is available
-  build_system = Builder.new.runtime?
-  unless build_system.running?
-    puts "#{build_system.name} sanity check failed.".red
-    exit 1
-  end
+  check_podman!
 
   # keep track of image IDs we've seen and make sure we're not creating conflicting tags
   seen_images = {}
@@ -19,7 +14,7 @@ task :tag do
     puts "Image: #{image.build_name_tag}".pink
 
     # abort if image has not been built
-    image_id = `#{build_system.name.downcase} image ls -q #{image.build_name_tag}`.strip
+    image_id = `podman image ls -q #{image.build_name_tag}`.strip
     if image_id.empty?
       puts "Image #{image.build_name_tag} has not been built.".red
       exit 1
@@ -40,16 +35,14 @@ task :tag do
         ron_name     = image.parts_join('/', ron, image.image_name)
         ron_name_tag = image.parts_join(':', ron_name, tag)
 
-        # abort if we're trying to overwite a tag already assigned to a different image in this run
-        # try to look up an existing tag by the same name
-        image_tag_id = `#{build_system.name.downcase} image ls -q #{ron_name_tag}`.strip
-        # if the image id matches one we've seen before, and it's not adding another tag to the same image, abort
+        # abort if we're trying to overwrite a tag already assigned to a different image in this run
+        image_tag_id = `podman image ls -q #{ron_name_tag}`.strip
         if !seen_images[image_tag_id].nil? && (image_tag_id != image_id)
-          puts "#{ron_name_tag} already tagged to #{seen_images[image_tag_id]}\nTag conclict! Check tags in metadata.yaml or \"rake clean\".".red
+          puts "#{ron_name_tag} already tagged to #{seen_images[image_tag_id]}\nTag conflict! Check tags in metadata.yaml or \"rake clean\".".red
           exit 1
         end
 
-        sh "#{build_system.name.downcase} tag #{image.build_name_tag} #{ron_name_tag}"
+        sh "podman tag #{image.build_name_tag} #{ron_name_tag}"
       end
     end
   end

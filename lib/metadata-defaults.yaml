@@ -7,13 +7,15 @@ labels: {}
 maintainer:
 registries: []
 build: true
+build_platform: 'linux/amd64'
 test: true
 tag: true
+tag_build_id: true
 push: true
 test_command:
 base_tags:
   - '<%= tag_join(version, variant) %>'
-  - '<%= tag_join(version, variant, build_suffix) %>'
+  - '<%= tag_build_id ? tag_join(version, variant, build_suffix) : nil %>'
 tags:
   - '<%= tag_join(version, variant, "latest") %>'
 template_files: []

@@ -2,3 +2,4 @@
 **/Dockerfile
 /lib.zip
 /metadata.yaml
+.agent
