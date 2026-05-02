@@ -81,6 +81,16 @@ class ContainerImage
     "b#{@build_id}"
   end
 
+  def iidfile
+    ".iid-#{parts_join('-', image_name, version, variant)}"
+  end
+
+  def image_id
+    return nil unless File.exist?(iidfile)
+
+    File.read(iidfile).strip
+  end
+
   def dir
     version_variant = tag_join(version, variant)
     version_variant.empty? ? '.' : version_variant

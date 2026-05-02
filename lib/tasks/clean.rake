@@ -8,8 +8,11 @@ task :clean do
     puts "Image: #{image.build_name_tag}".pink
 
     # delete image if it exists
-    image_id = `podman image ls -q #{image.build_name_tag}`.strip
-    sh "podman image rm -f #{image_id}" unless image_id.empty?
+    image_id = image.image_id
+    unless image_id.nil?
+      sh "podman image rm -f #{image_id}"
+      File.delete(image.iidfile)
+    end
 
     # delete FROM image if it exists
     image_from = image.from

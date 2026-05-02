@@ -13,17 +13,20 @@ task :patch do
     # Determine which image to patch
     if ENV['PATCH_BASE']
       base_tag = ENV['PATCH_BASE']
+      puts "Patching: #{base_tag}".pink
+      image_id = `podman image ls -q #{base_tag}`.strip
+      if image_id.empty?
+        puts "Base image #{base_tag} not found. Build or pull it first.".red
+        exit 1
+      end
     else
       base_tag = image.build_name_tag
-    end
-
-    puts "Patching: #{base_tag}".pink
-
-    # Verify the base image exists
-    image_id = `podman image ls -q #{base_tag}`.strip
-    if image_id.empty?
-      puts "Base image #{base_tag} not found. Build or pull it first.".red
-      exit 1
+      puts "Patching: #{base_tag}".pink
+      image_id = image.image_id
+      if image_id.nil?
+        puts "Image #{base_tag} has not been built.".red
+        exit 1
+      end
     end
 
     # Determine patch suffix (increment pN based on existing patches)
@@ -41,7 +44,7 @@ task :patch do
     puts "Patch command: #{patch_cmd}".yellow
 
     # Create a container from the base image, apply the patch, commit
-    container = `podman create #{base_tag} sleep infinity`.strip
+    container = `podman create #{image_id} sleep infinity`.strip
     unless $?.success?
       puts 'Failed to create patch container.'.red
       exit 1

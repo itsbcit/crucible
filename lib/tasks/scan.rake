@@ -10,8 +10,14 @@ task :scan do
   $images.each do |image|
     next unless image.build_image?
 
-    build_tag = image.build_name_tag
-    puts "Image: #{build_tag}".pink
-    sh "trivy image --exit-code 1 --severity #{severity} #{build_tag}"
+    puts "Image: #{image.build_name_tag}".pink
+
+    image_id = image.image_id
+    if image_id.nil?
+      puts "Image #{image.build_name_tag} has not been built.".red
+      exit 1
+    end
+
+    sh "trivy image --exit-code 1 --severity #{severity} #{image_id}"
   end
 end

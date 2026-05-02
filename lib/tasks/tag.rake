@@ -13,9 +13,8 @@ task :tag do
 
     puts "Image: #{image.build_name_tag}".pink
 
-    # abort if image has not been built
-    image_id = `podman image ls -q #{image.build_name_tag}`.strip
-    if image_id.empty?
+    image_id = image.image_id
+    if image_id.nil?
       puts "Image #{image.build_name_tag} has not been built.".red
       exit 1
     end
@@ -42,7 +41,7 @@ task :tag do
           exit 1
         end
 
-        sh "podman tag #{image.build_name_tag} #{ron_name_tag}"
+        sh "podman tag #{image_id} #{ron_name_tag}"
       end
     end
   end
