@@ -1,9 +1,8 @@
 # frozen_string_literal: true
 
-desc 'Update Dockerfile templates'
+desc 'Update Containerfile templates'
 task :template do
-  # dummy DockerImage for managing build_id
-  dummy = DockerImage.new(image_name: 'dummy')
+  dummy = ContainerImage.new(image_name: 'dummy')
   dummy.new_build_id if ENV['KEEP_BUILD'].nil?
   build_id = dummy.build_id
   dummy = nil
@@ -37,20 +36,28 @@ task :template do
       end
     end
 
-    if File.exist?("#{dir}/Dockerfile.erb")
-      puts "\tRendering #{dir}/Dockerfile from #{dir}/Dockerfile.erb"
-      render_template("#{dir}/Dockerfile.erb", "#{dir}/Dockerfile", binding)
-    elsif image.variant != '' && File.exist?("#{image.variant}/Dockerfile.erb")
-      puts "\tRendering #{dir}/Dockerfile from #{image.variant}/Dockerfile.erb"
-      render_template("#{image.variant}/Dockerfile.erb", "#{dir}/Dockerfile", binding)
-    elsif image.version != '' && File.exist?("#{image.version}/Dockerfile.erb")
-      puts "\tRendering #{dir}/Dockerfile from #{image.version}/Dockerfile.erb"
-      render_template("#{image.version}/Dockerfile.erb", "#{dir}/Dockerfile", binding)
-    elsif File.exist?('Dockerfile.erb')
-      puts "\tRendering #{dir}/Dockerfile from Dockerfile.erb"
-      render_template('Dockerfile.erb', "#{dir}/Dockerfile", binding)
+    search_dirs = [dir]
+    search_dirs << image.variant if image.variant != ''
+    search_dirs << image.version if image.version != ''
+    search_dirs << '.'
+
+    template_src = nil
+    search_dirs.each do |search_dir|
+      ['Containerfile.erb', 'Dockerfile.erb'].each do |name|
+        candidate = search_dir == '.' ? name : "#{search_dir}/#{name}"
+        if File.exist?(candidate)
+          template_src = candidate
+          break
+        end
+      end
+      break if template_src
+    end
+
+    if template_src
+      puts "\tRendering #{dir}/Containerfile from #{template_src}"
+      render_template(template_src, "#{dir}/Containerfile", binding)
     else
-      puts "\tNo Dockerfile template to render".yellow
+      puts "\tNo Containerfile template to render".yellow
     end
   end
 end

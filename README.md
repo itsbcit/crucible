@@ -68,7 +68,7 @@ vars:
   foo_version: '1.2.3'
 ```
 
-Inside ERB templated files, these parameters are available as eg. `image.vars['foo_version']`. Eg in a Dockerfile.erb:
+Inside ERB templated files, these parameters are available as eg. `image.vars['foo_version']`. Eg in a Containerfile.erb:
 
 ```erb
 RUN yum install \
@@ -114,7 +114,7 @@ Any file in `lib` can be overridden by the same file name in `local/`. For examp
 
 ### Normal usage workflow
 
-1. Make `Dockerfile` changes in `Dockerfile.erb`
+1. Make `Containerfile` changes in `Containerfile.erb`
 1. `rake update` to pull down Rakefile and library updates
 1. `rake` (runs [template](#template), [build](#build), [test](#test), and [tag](#tag))
 1. `rake push` to push to registries defined in [`metadata.yaml`](#create-metadatayaml)
@@ -137,7 +137,7 @@ Side-effect: also calls [install](#install)
 
 ### template
 
-Create or overwrite Dockerfile(s) from ERB templates and render any templated files listed for the versions and variants into their build directories.
+Create or overwrite Containerfile(s) from ERB templates and render any templated files listed for the versions and variants into their build directories. `Dockerfile.erb` is also accepted as a fallback for backwards compatibility.
 
 `rake template`
 
@@ -173,6 +173,16 @@ Apply security updates to an existing image without a full rebuild.
 `PATCH_BASE='myimage:b1567100182' rake patch` — patch a specific build
 
 Produces images tagged with a `-pN` suffix (e.g. `image:b1567100182-p1`).
+
+### scan
+
+Scan built container images for vulnerabilities using [Trivy](https://trivy.dev/).
+
+`rake scan` — fails if any HIGH or CRITICAL vulnerabilities are found
+
+`SEVERITY=CRITICAL rake scan` — only fail on CRITICAL vulnerabilities
+
+Requires `trivy` to be installed. See [aquasecurity/trivy](https://github.com/aquasecurity/trivy) for installation.
 
 ### push
 

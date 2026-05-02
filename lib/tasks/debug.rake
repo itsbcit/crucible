@@ -26,7 +26,7 @@ task :debug do
     # show predicted build task commands:
     puts 'Build task:'.yellow
     build_tag = image.build_name_tag
-    puts "podman build --platform #{image.build_platform} -f #{image.dir}/Dockerfile -t #{build_tag} ."
+    puts "podman build --platform #{image.build_platform} -f #{image.dockerfile} -t #{build_tag} ."
 
     # show predicted tag task commands:
     puts 'Tag task:'.yellow

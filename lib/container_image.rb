@@ -112,6 +112,9 @@ class ContainerImage
   end
 
   def dockerfile
+    containerfile = "#{dir}/Containerfile"
+    return containerfile if File.exist?(containerfile)
+
     "#{dir}/Dockerfile"
   end
 
