@@ -249,8 +249,8 @@ Every GitHub release must include two assets that `rake install` and `rake updat
 To create a release:
 
 ```bash
-# build the lib zip
-cd lib && zip -r /tmp/crucible-lib.zip . && cd ..
+# build the lib zip (must contain lib/ as top-level directory)
+zip -r /tmp/crucible-lib.zip lib/
 
 # create the release with assets
 gh release create vX.Y.Z --title "vX.Y.Z" --notes "..." /tmp/crucible-lib.zip Rakefile
