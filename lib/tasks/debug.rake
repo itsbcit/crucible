@@ -23,10 +23,20 @@ task :debug do
     puts 'Rendered Tags:'.yellow
     puts image.tags
 
+    puts 'Image ID:'.yellow
+    puts image.image_id || '(not built)'
+
+    puts 'IID file:'.yellow
+    puts image.iidfile
+
     # show predicted build task commands:
     puts 'Build task:'.yellow
     build_tag = image.build_name_tag
-    puts "podman build --platform #{image.build_platform} -f #{image.dockerfile} -t #{build_tag} ."
+    puts "podman build --platform #{image.build_platform} --iidfile #{image.iidfile} -f #{image.dockerfile} -t #{build_tag} ."
+
+    # show predicted scan task commands:
+    puts 'Scan task:'.yellow
+    puts "trivy image --exit-code 1 --severity HIGH,CRITICAL <image_id>"
 
     # show predicted tag task commands:
     puts 'Tag task:'.yellow
@@ -43,7 +53,7 @@ task :debug do
         ron          = image.parts_join('/', registry_url, registry['org_name'])
         ron_name     = image.parts_join('/', ron, image.image_name)
         ron_name_tag = image.parts_join(':', ron_name, tag)
-        puts "podman tag #{image.build_name_tag} #{ron_name_tag}"
+        puts "podman tag <image_id> #{ron_name_tag}"
       end
     end
 
