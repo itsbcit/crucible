@@ -1,13 +1,1 @@
-# Add docker-entrypoint script base
-ADD https://github.com/itsbcit/docker-entrypoint/releases/download/v<%= image.vars['de_version'] %>/docker-entrypoint.tar.gz /docker-entrypoint.tar.gz
-RUN tar zxvf docker-entrypoint.tar.gz && rm -f docker-entrypoint.tar.gz \
- && chmod -R 555 /docker-entrypoint.* \
- && echo "UTC" > /etc/timezone \
- && ln -sf /usr/share/zoneinfo/UTC /etc/localtime \
- && chmod 664 /etc/passwd \
-              /etc/group \
-              /etc/shadow \
-              /etc/timezone \
-              /etc/localtime \
- && chown 0:0 /etc/shadow \
- && chmod 775 /etc
+<%= snippet('container-entrypoint', binding) -%>

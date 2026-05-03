@@ -239,6 +239,64 @@ versions:
       php_version: '7.4.24'
 ```
 
+## Snippets
+
+Reusable Containerfile fragments in `lib/snippets/`. Include them in `Containerfile.erb` with:
+
+```erb
+<%= snippet('name', binding) -%>
+```
+
+Any snippet can be overridden by placing a file with the same name in `local/snippets/`.
+
+### container-entrypoint
+
+Downloads and installs the entrypoint script framework from [itsbcit/container-entrypoint](https://github.com/itsbcit/container-entrypoint).
+
+Variable: `ce_version` (default: `1.0`)
+
+### docker-entrypoint
+
+Backward-compatible stub that delegates to [container-entrypoint](#container-entrypoint).
+
+### catatonit
+
+Downloads and installs [catatonit](https://github.com/openSUSE/catatonit), a minimal container init process. Drop-in replacement for tini, and the same init used internally by Podman.
+
+Variable: `catatonit_version` (default: `0.2.1`)
+
+```erb
+<%= snippet('catatonit', binding) -%>
+```
+
+```dockerfile
+ENTRYPOINT ["/catatonit", "--", "/container-entrypoint.sh"]
+```
+
+### tini
+
+Downloads and installs [tini](https://github.com/krallin/tini), a lightweight init process.
+
+Variable: `tini_version` (default: `0.19.0`)
+
+### dockerize
+
+Downloads and installs [dockerize](https://github.com/jwilder/dockerize) for template rendering and service readiness checks.
+
+Variable: `dockerize_version` (default: `0.6.1`)
+
+### labels
+
+Renders `LABEL` instructions from the image's labels hash.
+
+## Obsoleted config options
+
+### `de_version`
+
+The `de_version` variable (used by the old `docker-entrypoint` snippet to download from [itsbcit/docker-entrypoint](https://github.com/itsbcit/docker-entrypoint)) is obsolete. Use `ce_version` instead, which downloads from [itsbcit/container-entrypoint](https://github.com/itsbcit/container-entrypoint).
+
+Setting `de_version` in `base_vars` or `vars` at any level will raise an error during config parsing.
+
 ## Releasing
 
 Every GitHub release must include two assets that `rake install` and `rake update` download:

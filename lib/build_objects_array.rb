@@ -81,6 +81,9 @@ def build_objects_array(options = {})
       # make sure test_command isn't nil
       test_command = test_command.nil?                   ? ''           : test_command
 
+      merged_vars = base_vars.deep_merge(vars).deep_merge(version_vars).deep_merge(variant_vars)
+      raise("'de_version' is obsolete. Use 'ce_version' with the container-entrypoint snippet instead.") if merged_vars.key?('de_version')
+
     objects_array << ContainerImage.new(
         build_image: variant_build_image,
         build_platform: variant_build_platform,
@@ -96,7 +99,7 @@ def build_objects_array(options = {})
         test_command: variant_test_command,
         test_image: variant_test_image,
         variant: variant,
-        vars: base_vars.deep_merge(vars).deep_merge(version_vars).deep_merge(variant_vars),
+        vars: merged_vars,
         version: version
       )
     end

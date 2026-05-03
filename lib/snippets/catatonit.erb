@@ -1,0 +1,4 @@
+# Add catatonit
+ADD https://github.com/openSUSE/catatonit/releases/download/v<%= image.vars['catatonit_version'] %>/catatonit.x86_64 /catatonit
+RUN chmod +x /catatonit \
+ && ln -s /catatonit /sbin/catatonit
