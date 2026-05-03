@@ -238,3 +238,20 @@ versions:
     vars:
       php_version: '7.4.24'
 ```
+
+## Releasing
+
+Every GitHub release must include two assets that `rake install` and `rake update` download:
+
+1. **`crucible-lib.zip`** — a zip of the `lib/` directory contents (flat `.rb`/`.yaml` files at root, `tasks/` and `snippets/` subdirectories preserved)
+2. **`Rakefile`** — the current `Rakefile` from the repo root
+
+To create a release:
+
+```bash
+# build the lib zip
+cd lib && zip -r /tmp/crucible-lib.zip . && cd ..
+
+# create the release with assets
+gh release create vX.Y.Z --title "vX.Y.Z" --notes "..." /tmp/crucible-lib.zip Rakefile
+```
