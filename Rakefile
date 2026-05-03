@@ -34,7 +34,7 @@ end
 
 desc 'Install Rakefile support files'
 task :install do
-  URI.parse('https://github.com/itsbcit/crucible/releases/latest/download/lib.zip').open do |archive|
+  URI.parse('https://github.com/itsbcit/crucible/releases/latest/download/crucible-lib.zip').open do |archive|
     FileUtils.remove_entry('lib') if File.exist?('lib')
     tempfile = Tempfile.new(['lib', '.zip'])
     File.open(tempfile.path, 'wb') do |f|
