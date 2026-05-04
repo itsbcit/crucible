@@ -59,7 +59,7 @@ task :push do
         if registry_authenticated?(login_key)
           puts "Already authenticated to #{login_key}".green
         else
-          sh "podman login #{registry['url']}"
+          sh "podman login #{login_key}"
         end
         logged_in_registries[login_key] = true
       end

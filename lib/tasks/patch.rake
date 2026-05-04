@@ -44,7 +44,7 @@ task :patch do
     puts "Patch command: #{patch_cmd}".yellow
 
     # Create a container from the base image, apply the patch, commit
-    container = `podman create #{image_id} sleep infinity`.strip
+    container = `podman create --platform #{image.build_platform} #{image_id} sleep infinity`.strip
     unless $?.success?
       puts 'Failed to create patch container.'.red
       exit 1
