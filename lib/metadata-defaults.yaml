@@ -25,7 +25,7 @@ base_vars:
   catatonit_version: '0.2.1'
   tini_version: '0.19.0'
   ce_version: '1.0'
-  dockerize_version: '0.6.1'
+  dockerize_version: '0.11.1'
 vars: {}
 versions:
   '': {}
