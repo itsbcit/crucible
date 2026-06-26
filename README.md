@@ -25,7 +25,11 @@ Install Podman via your package manager. See [podman.io/docs/installation](https
 
 ### New container image repositories
 
-Click "Use this template" (green button) in the [docker-template](https://github.com/itsbcit/docker-template) GitHub repository to create a new templated GitHub repository. You must be logged-in to GitHub to see this option.
+Clone [container-template](https://github.com/itsbcit/container-template) as the starting point for a new container image repository:
+
+```bash
+git clone https://github.com/itsbcit/container-template ~/Devel/my-new-image
+```
 
 ### Existing container image repositories
 
@@ -283,7 +287,7 @@ Variable: `tini_version` (default: `0.19.0`)
 
 Downloads and installs [dockerize](https://github.com/jwilder/dockerize) for template rendering and service readiness checks.
 
-Variable: `dockerize_version` (default: `0.6.1`)
+Variable: `dockerize_version` (default: `0.11.1`)
 
 ### labels
 
