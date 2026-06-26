@@ -186,7 +186,7 @@ Requires `trivy` to be installed. See [aquasecurity/trivy](https://github.com/aq
 
 ### push
 
-Push all images and tags to the registries configured in `metadata.yaml`. Checks for existing Podman credentials before prompting for login.
+Push all images and tags to the registries configured in `metadata.yaml`. Authentication must be set up before calling this task, either via `podman login` or by setting `REGISTRY_AUTH_FILE` to a valid auth config.
 
 `rake push`
 
