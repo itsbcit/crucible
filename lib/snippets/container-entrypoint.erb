@@ -1,4 +1,5 @@
 # Add container-entrypoint script base
 ADD https://github.com/itsbcit/container-entrypoint/releases/download/v<%= image.vars['ce_version'] %>/container-entrypoint.tar.gz /tmp/container-entrypoint.tar.gz
 RUN tar zxv -f /tmp/container-entrypoint.tar.gz \
- && rm /tmp/container-entrypoint.tar.gz
+ && rm /tmp/container-entrypoint.tar.gz \
+ && chmod 0555 /container-entrypoint.sh
