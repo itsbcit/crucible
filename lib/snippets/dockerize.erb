@@ -1,9 +1,8 @@
 # Add dockerize
-ADD https://github.com/jwilder/dockerize/releases/download/v<%= image.vars['dockerize_version'] %>/dockerize-alpine-linux-amd64-v<%= image.vars['dockerize_version'] %>.tar.gz /dockerize.tar.gz
 RUN [ -d /usr/local/bin ] || mkdir -p /usr/local/bin \
- && tar zxf /dockerize.tar.gz -C /usr/local/bin \
+ && curl -fsSL https://github.com/jwilder/dockerize/releases/download/v<%= image.vars['dockerize_version'] %>/dockerize-alpine-linux-amd64-v<%= image.vars['dockerize_version'] %>.tar.gz \
+    | tar zx -C /usr/local/bin \
  && chown 0:0 /usr/local/bin/dockerize \
- && chmod 0555 /usr/local/bin/dockerize \
- && rm -f /dockerize.tar.gz
+ && chmod 0555 /usr/local/bin/dockerize
 
 ENV DOCKERIZE_ENV production
