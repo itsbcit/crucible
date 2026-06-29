@@ -1,13 +1,3 @@
 # Add container-entrypoint script base
 ADD https://github.com/itsbcit/container-entrypoint/releases/download/v<%= image.vars['ce_version'] %>/container-entrypoint.tar.gz /container-entrypoint.tar.gz
-RUN tar zxvf container-entrypoint.tar.gz && rm -f container-entrypoint.tar.gz \
- && chmod -R 555 /container-entrypoint.* \
- && echo "UTC" > /etc/timezone \
- && ln -sf /usr/share/zoneinfo/UTC /etc/localtime \
- && chmod 664 /etc/passwd \
-              /etc/group \
-              /etc/shadow \
-              /etc/timezone \
-              /etc/localtime \
- && chown 0:0 /etc/shadow \
- && chmod 775 /etc
+RUN tar zxvf container-entrypoint.tar.gz
