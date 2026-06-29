@@ -1,3 +1,2 @@
 # Add container-entrypoint script base
-RUN curl -fsSL https://github.com/itsbcit/container-entrypoint/releases/download/v<%= image.vars['ce_version'] %>/container-entrypoint.tar.gz \
-    | tar zxv
+ADD https://github.com/itsbcit/container-entrypoint/releases/download/v<%= image.vars['ce_version'] %>/container-entrypoint.tar.gz /
