@@ -67,7 +67,7 @@ A simple example for an image without versions or variants:
 image_name: template_test
 registries:
   - url: registry.example.com
-    org_name: myorg
+    project: myorg
 vars:
   foo_version: '1.2.3'
 ```
@@ -224,11 +224,11 @@ variants:
   'builder':
     registries:
       - url: registry.example.com
-        org_name: myorg
+        project: myorg
   '':
     registries:
       - url: registry.example.com
-        org_name: myorg
+        project: myorg
   'oci':
     registries:
       - url: registry.example.com:5000
@@ -242,6 +242,10 @@ versions:
     vars:
       php_version: '7.4.24'
 ```
+
+### Registry project key
+
+The registry project/namespace can be specified as `project`, `org`, or `org_name` — all three are equivalent. `project` is preferred. If more than one is set, `org_name` takes priority, then `project`, then `org`.
 
 ## Snippets
 
