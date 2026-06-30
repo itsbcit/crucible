@@ -30,6 +30,11 @@ if File.exist?('metadata.yaml') && File.exist?('lib')
     metadata: local_metadata,
     default_metadata: default_metadata
   )
+
+  filter_version = ENV['VERSION']
+  filter_variant = ENV['VARIANT']
+  $images.select! { |i| i.version == filter_version } if filter_version
+  $images.select! { |i| i.variant == filter_variant } if filter_variant
 end
 
 desc 'Install Rakefile support files'
