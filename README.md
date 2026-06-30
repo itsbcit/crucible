@@ -141,11 +141,19 @@ Install the Rakefile support files from the [latest release](https://github.com/
 
 `rake install`
 
+To install from a specific branch or tag instead of the latest release:
+
+`CRUCIBLE_REF=main rake install`
+
+When `CRUCIBLE_REF` is set, both `lib/` and the `Rakefile` are fetched from that ref's archive. This is useful for testing unreleased crucible changes in a consumer repo before cutting a release.
+
 ### update
 
-`Rakefile` self-update. Download and overwrite the `Rakefile` and `libs` directory with the [latest release](https://github.com/itsbcit/crucible/releases/latest)
+`Rakefile` self-update. Download and overwrite the `Rakefile` and `lib/` directory with the [latest release](https://github.com/itsbcit/crucible/releases/latest).
 
 `rake update`
+
+`CRUCIBLE_REF=main rake update` — update from a specific branch or tag (delegates to `rake install`, which already fetches both `lib/` and the `Rakefile` from the archive).
 
 Side-effect: also calls [install](#install)
 
