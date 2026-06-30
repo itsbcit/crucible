@@ -3,13 +3,14 @@
 # Object class ContainerImage
 class ContainerImage
   attr_reader :image_name, :template_files, :registries, :variant, :version, :maintainer, :test_command,
-              :build_platform, :tag_build_id
+              :build_platform, :tag_build_id, :depends_on
   attr_accessor :build_id
 
   def initialize(
     build_id:       0,
     build_image:    true,
     build_platform: 'linux/amd64',
+    depends_on:     nil,
     image_name:,
     labels:         {},
     maintainer:     '',
@@ -28,6 +29,7 @@ class ContainerImage
     @build_id           = build_id
     @build_image        = build_image
     @build_platform     = ENV['BUILD_PLATFORM'] || build_platform
+    @depends_on         = depends_on
     @image_name         = image_name
     @labels             = labels
     @maintainer         = maintainer

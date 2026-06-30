@@ -68,11 +68,12 @@ def build_objects_array(options = {})
 
       variant_build_image    = variant_params['build'].nil?          ? version_build_image    : variant_params['build']
       variant_build_platform = variant_params['build_platform'].nil? ? version_build_platform : variant_params['build_platform']
+      variant_depends_on     = variant_params['depends_on']
       variant_maintainer     = variant_params['maintainer'].nil?     ? version_maintainer     : variant_params['maintainer']
       variant_push_image     = variant_params['push'].nil?           ? version_push_image     : variant_params['push']
       variant_tag_build_id   = variant_params['tag_build_id'].nil?   ? version_tag_build_id   : variant_params['tag_build_id']
       variant_tag_image      = variant_params['tag'].nil?            ? version_tag_image      : variant_params['tag']
-      variant_test_command   = variant_params['test_command'].nil?    ? version_test_command   : variant_params['test_command']
+      variant_test_command   = variant_params['test_command'].nil?   ? version_test_command   : variant_params['test_command']
       variant_test_image     = variant_params['test'].nil?           ? version_test_image     : variant_params['test']
 
       merged_registries = merge_registries(registries, version_registries, variant_registries)
@@ -87,6 +88,7 @@ def build_objects_array(options = {})
     objects_array << ContainerImage.new(
         build_image: variant_build_image,
         build_platform: variant_build_platform,
+        depends_on: variant_depends_on,
         image_name: image_name,
         labels: base_labels.deep_merge(labels).deep_merge(version_labels).deep_merge(variant_labels),
         maintainer: variant_maintainer,
