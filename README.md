@@ -290,7 +290,7 @@ Any snippet can be overridden by placing a file with the same name in `local/sni
 
 Downloads and installs the entrypoint script framework from [itsbcit/container-entrypoint](https://github.com/itsbcit/container-entrypoint).
 
-Variable: `ce_version` (default: `1.0`)
+Variable: `ce_version` (default: `1.0.0`)
 
 ### docker-entrypoint
 
