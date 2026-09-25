@@ -33,8 +33,31 @@ if File.exist?('metadata.yaml') && File.exist?('lib')
 
   filter_version = ENV['VERSION']
   filter_variant = ENV['VARIANT']
-  $images.select! { |i| i.version == filter_version } if filter_version
-  $images.select! { |i| i.variant == filter_variant } if filter_variant
+
+  if filter_version || filter_variant
+    available = $images.map { |i| [i.version, i.variant] }
+    $images.select! { |i| i.version == filter_version } if filter_version
+    $images.select! { |i| i.variant == filter_variant } if filter_variant
+
+    # A filter matching nothing is an error, not an empty success.
+    #
+    # Without this, every task iterates an empty $images and exits 0: "rake
+    # build" prints "Building images" and builds none, "rake tag" tags none,
+    # "rake push" pushes none -- a green pipeline that produced no artifact.
+    # This bit container-wolfi-nginx when a version key was renamed in
+    # metadata.yaml but the generated .woodpecker/build.yaml still passed the
+    # old VERSION, and the failure was only noticed when a downstream deploy
+    # could not pull the image that was never published.
+    if $images.empty?
+      wanted = []
+      wanted << "VERSION=#{filter_version}" if filter_version
+      wanted << "VARIANT=#{filter_variant}" if filter_variant
+      have = available.map { |v, r| "VERSION=#{v.empty? ? '(none)' : v} VARIANT=#{r.empty? ? '(none)' : r}" }
+      abort "No image in metadata.yaml matches #{wanted.join(' ')}.\n" \
+            "Available:\n  #{have.uniq.join("\n  ")}\n" \
+            'If the version matrix changed, re-run "rake woodpecker" to regenerate the pipeline.'
+    end
+  end
 end
 
 desc 'Install Rakefile support files'
