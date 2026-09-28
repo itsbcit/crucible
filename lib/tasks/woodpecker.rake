@@ -29,11 +29,8 @@ task :woodpecker do
     'image'       => ci_image,
     'pull'        => true,
     'privileged'  => true,
-    'when'        => [{ 'event' => %w[push manual], 'branch' => 'main' }],
-    'environment' => {
-      'HARBOR_CONFIG'      => { 'from_secret' => 'harbor_config' },
-      'REGISTRY_AUTH_FILE' => '/root/.docker/config.json'
-    },
+    'when'        => when_push,
+    'environment' => base_env,
     'commands'    => auth_setup + ['rake install', 'rake template', 'rake woodpecker']
   }
 
@@ -49,11 +46,7 @@ task :woodpecker do
       step_depends << dep_name
     end
 
-    env = {
-      'HARBOR_CONFIG'      => { 'from_secret' => 'harbor_config' },
-      'REGISTRY_AUTH_FILE' => '/root/.docker/config.json',
-      'KEEP_BUILD'         => '1'
-    }
+    env = base_env.merge('KEEP_BUILD' => '1')
     env['VERSION'] = image.version unless image.version.empty?
     env['VARIANT'] = image.variant unless image.variant.empty?
 
@@ -63,9 +56,49 @@ task :woodpecker do
       'pull'        => true,
       'privileged'  => true,
       'depends_on'  => step_depends,
-      'when'        => [{ 'event' => %w[push manual], 'branch' => 'main' }],
+      'when'        => when_push,
       'environment' => env,
       'commands'    => auth_setup + [
+        'rake install',
+        'rake template',
+        'rake build',
+        'rake test',
+        'rake scan',
+        'rake tag',
+        'rake push'
+      ]
+    }
+  end
+
+  # Tag steps: build what a "v<version>" git tag names.
+  #
+  # VERSION is derived from the tag rather than hardcoded, so the tag and
+  # metadata.yaml are checked against each other on every tagged build. The
+  # VERSION filter aborts when it matches no image, which turns a tag that
+  # disagrees with metadata.yaml into a failed pipeline instead of a silent
+  # rebuild of whatever version metadata.yaml happens to hold.
+  #
+  # A leading "v" is stripped so both "v1.2.0" and "1.2.0" work. Repos whose
+  # images carry no version (no versions: key) get no tag step, since there
+  # would be nothing for the tag to agree with.
+  versioned_images = all_images.reject { |i| i.version.empty? }
+
+  versioned_images.each do |image|
+    variant_label = image.variant.empty? ? 'base' : image.variant
+    step_name     = ['tag', image.version, variant_label].reject(&:empty?).join('-')
+
+    env = base_env.merge('KEEP_BUILD' => '1')
+    env['VARIANT'] = image.variant unless image.variant.empty?
+
+    steps << {
+      'name'        => step_name,
+      'image'       => ci_image,
+      'pull'        => true,
+      'privileged'  => true,
+      'when'        => [{ 'event' => 'tag' }],
+      'environment' => env,
+      'commands'    => auth_setup + [
+        'export VERSION="${CI_COMMIT_TAG#v}"',
         'rake install',
         'rake template',
         'rake build',
