@@ -34,7 +34,13 @@ task :woodpecker do
     'commands'    => auth_setup + ['rake install', 'rake template', 'rake woodpecker']
   }
 
-  # one build step per version x variant
+  # One build step per version x variant.
+  #
+  # These validate only: build, test and scan, with no tag/push. Publishing is
+  # the tag steps' job. Running both on a tagged release commit meant two
+  # pipelines racing to push the identical tags from the same commit, and it
+  # also moved :latest on every push to main, so consumers tracking :latest
+  # picked up unreleased commits.
   all_images.each do |image|
     variant_label = image.variant.empty? ? 'base' : image.variant
     step_name     = ['build', image.version, variant_label].reject(&:empty?).join('-')
@@ -63,9 +69,7 @@ task :woodpecker do
         'rake template',
         'rake build',
         'rake test',
-        'rake scan',
-        'rake tag',
-        'rake push'
+        'rake scan'
       ]
     }
   end
