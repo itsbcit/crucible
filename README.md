@@ -122,7 +122,7 @@ tags:
   - '<%= tag_join(version, variant, git_sha) %>'     # e.g. 1.2.3-abc1234, or abc1234 when unversioned
 ```
 
-Locally the SHA names `HEAD` even when the working tree has uncommitted changes, so treat it as meaningful only for CI-built images.
+Locally the SHA names `HEAD` even when the working tree has uncommitted changes, so treat it as meaningful only for CI-built images. A scheduled rebuild (see [Scheduled rebuilds](#scheduled-rebuilds)) re-points the SHA tag at the rebuilt image, so it means "latest build of this commit"; use the `b<id>` tag for an immutable reference.
 
 ### Building a single version or variant
 
@@ -369,12 +369,24 @@ This stamps a new build ID, re-renders all Containerfiles, and regenerates `.woo
 - One parallel step per version×variant, on push/manual to `main`: runs `rake install && rake template && rake build && rake test && rake scan` with `VERSION`, `VARIANT`, and `KEEP_BUILD=1` set. These validate only and publish nothing.
 - One tag step per version×variant, on a git tag: the same commands plus `rake tag && rake push`. This is the only place images are published. For versioned images, `VERSION` is taken from the tag (a leading `v` is stripped), so a tag that disagrees with `metadata.yaml` fails the pipeline. Images with no `versions:` key publish on any tag.
 
+- One rebuild step per version×variant, on a Woodpecker cron named `rebuild`: the same commands as the tag step, but with `VERSION` taken from `metadata.yaml`, after a fresh `render`. This republishes the current version with the latest base image and packages, without a commit or a new tag.
+
 To publish:
 
 ```bash
 git tag -a v1.2.3 -m "..."    # versioned: bump metadata.yaml first; unversioned: any tag name
 git push origin v1.2.3
 ```
+
+### Scheduled rebuilds
+
+Rebuild steps only run when a cron **named `rebuild`** exists for the repo; a cron with any other name triggers none of them. Schedules use standard 5-field cron syntax in UTC:
+
+```bash
+woodpecker-cli repo cron add --repo ORG/REPO --name rebuild --branch main --schedule '0 11 * * *'
+```
+
+Each scheduled run gets a new build ID, so its `b<id>` tag is new. Floating tags (`latest`, the version tag, and a `git_sha` tag) move to the rebuilt image.
 
 ### depends_on
 

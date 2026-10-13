@@ -68,6 +68,13 @@ telling consumers that in the release notes.
 |---|---|
 | push / manual on `main` | `rake build`, `rake test`, `rake scan` |
 | tag | the above plus `rake tag`, `rake push` |
+| cron named `rebuild` | `render`, then the above plus `rake tag`, `rake push`, with `VERSION` from `metadata.yaml` |
+
+The cron steps filter on the cron **name**, so they are inert until someone
+creates a `rebuild` cron for the repo. They exist so base-image and package
+fixes ship without a commit or a tag. They run after `render` so each run
+gets a fresh build ID; without it the committed `.build_id` would be reused
+and every scheduled run would overwrite the same `b<id>` tag.
 
 Tag steps derive `VERSION` from `CI_COMMIT_TAG` (stripping a leading `v`)
 rather than hardcoding it. Combined with the `VERSION` filter in the
@@ -83,7 +90,7 @@ an unversioned repo (e.g. `container-wolfi-base`, published only as
 
 Keep these two properties when editing `lib/tasks/woodpecker.rake`:
 
-- Only the tag step publishes. Having push steps publish too means a tagged
+- Only tag and cron-rebuild steps publish; push steps never do. Having push steps publish too means a tagged
   release commit builds twice and races to push identical tags, and it moves
   `:latest` on every push so consumers tracking it get unreleased commits.
 - A filter matching nothing must **abort**, never exit 0. An empty `$images`
