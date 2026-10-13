@@ -68,17 +68,26 @@ task :install do
     # Download archive for a specific branch or tag.
     # GitHub's /archive/<ref>.zip works for both branches and tags.
     archive_url = "https://github.com/itsbcit/crucible/archive/#{crucible_ref}.zip"
-    extract_dir = "crucible-#{crucible_ref}"
-    puts "Installing crucible lib and Rakefile from ref: #{crucible_ref}".green
+    # No .green here: colorize lives in lib/, which may not exist yet.
+    puts "Installing crucible lib and Rakefile from ref: #{crucible_ref}"
     URI.parse(archive_url).open do |archive|
       tempfile = Tempfile.new(['crucible', '.zip'])
       File.open(tempfile.path, 'wb') { |f| f.write(archive.read) }
       tmpdir = Dir.mktmpdir
       system('unzip', '-q', tempfile.path, '-d', tmpdir)
       tempfile.unlink
+      # The archive's top-level directory is named after the resolved ref (a
+      # short SHA expands to the full SHA, a "v" tag may lose its "v"), so find
+      # it rather than predicting it. Check before removing lib/, so a bad ref
+      # cannot leave the repo with no lib/ at all.
+      extract_dir = Dir.glob(File.join(tmpdir, 'crucible-*')).first
+      unless extract_dir && File.directory?(File.join(extract_dir, 'lib'))
+        FileUtils.remove_entry(tmpdir)
+        abort "No lib/ found in #{archive_url}; existing lib/ left untouched."
+      end
       FileUtils.remove_entry('lib') if File.exist?('lib')
-      FileUtils.mv(File.join(tmpdir, extract_dir, 'lib'), '.')
-      FileUtils.cp(File.join(tmpdir, extract_dir, 'Rakefile'), 'Rakefile')
+      FileUtils.mv(File.join(extract_dir, 'lib'), '.')
+      FileUtils.cp(File.join(extract_dir, 'Rakefile'), 'Rakefile')
       FileUtils.remove_entry(tmpdir)
     end
   else
