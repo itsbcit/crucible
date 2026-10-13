@@ -82,17 +82,21 @@ task :woodpecker do
   # disagrees with metadata.yaml into a failed pipeline instead of a silent
   # rebuild of whatever version metadata.yaml happens to hold.
   #
-  # A leading "v" is stripped so both "v1.2.0" and "1.2.0" work. Repos whose
-  # images carry no version (no versions: key) get no tag step, since there
-  # would be nothing for the tag to agree with.
-  versioned_images = all_images.reject { |i| i.version.empty? }
-
-  versioned_images.each do |image|
+  # A leading "v" is stripped so both "v1.2.0" and "1.2.0" work.
+  #
+  # Images with no version (no versions: key) still get a tag step, without
+  # the VERSION check: there is nothing for the tag to agree with, so any tag
+  # publishes them. Skipping them instead left unversioned repos (e.g. a base
+  # image published only as :latest) with no publish step at all, and every
+  # pipeline went green while nothing reached the registry.
+  all_images.each do |image|
     variant_label = image.variant.empty? ? 'base' : image.variant
     step_name     = ['tag', image.version, variant_label].reject(&:empty?).join('-')
 
     env = base_env.merge('KEEP_BUILD' => '1')
     env['VARIANT'] = image.variant unless image.variant.empty?
+
+    version_from_tag = image.version.empty? ? [] : ['export VERSION="${CI_COMMIT_TAG#v}"']
 
     steps << {
       'name'        => step_name,
@@ -101,8 +105,7 @@ task :woodpecker do
       'privileged'  => true,
       'when'        => [{ 'event' => 'tag' }],
       'environment' => env,
-      'commands'    => auth_setup + [
-        'export VERSION="${CI_COMMIT_TAG#v}"',
+      'commands'    => auth_setup + version_from_tag + [
         'rake install',
         'rake template',
         'rake build',

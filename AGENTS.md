@@ -75,8 +75,11 @@ rather than hardcoding it. Combined with the `VERSION` filter in the
 `metadata.yaml` check each other instead of relying on the operator
 remembering both edits.
 
-Repos with no `versions:` key get no tag step, since there would be nothing
-for a tag to agree with.
+Repos with no `versions:` key still get a tag step, without the `VERSION`
+export: there is nothing for the tag to agree with, so any tag publishes
+them. Do not skip them. Through v1.4.5 they got no tag step at all, which left
+an unversioned repo (e.g. `container-wolfi-base`, published only as
+`:latest`) with no publish step anywhere: green pipelines, nothing pushed.
 
 Keep these two properties when editing `lib/tasks/woodpecker.rake`:
 
