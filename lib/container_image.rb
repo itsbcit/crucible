@@ -83,6 +83,22 @@ class ContainerImage
     "b#{@build_id}"
   end
 
+  # Short (7-character) commit SHA, for use in ERB tags, e.g.
+  # tags: ['<%= tag_join(version, variant, git_sha) %>']
+  #
+  # Woodpecker's CI_COMMIT_SHA is preferred because the CI image may have no
+  # git. Outside CI this falls back to the local checkout. Returns nil when
+  # neither is available, and a nil tag is dropped rather than rendered empty.
+  def git_sha
+    @git_sha ||= begin
+      sha = ENV['CI_COMMIT_SHA'].to_s
+      sha = `git rev-parse HEAD 2>/dev/null`.strip if sha.empty?
+      sha.empty? ? nil : sha[0, 7]
+    rescue Errno::ENOENT
+      nil
+    end
+  end
+
   def iidfile
     ".iid-#{parts_join('-', image_name, version, variant)}"
   end

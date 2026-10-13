@@ -112,6 +112,18 @@ tag_build_id: false
 
 This can be set at the top level, per-version, or per-variant.
 
+### Optional commit SHA tagging
+
+`git_sha` returns the 7-character commit SHA and can be used in ERB tags. It reads Woodpecker's `CI_COMMIT_SHA` and falls back to the local checkout; if neither is available the tag is dropped.
+
+```yaml
+tags:
+  - 'latest'                                         # tags: replaces the default list, so restate latest
+  - '<%= tag_join(version, variant, git_sha) %>'     # e.g. 1.2.3-abc1234, or abc1234 when unversioned
+```
+
+Locally the SHA names `HEAD` even when the working tree has uncommitted changes, so treat it as meaningful only for CI-built images.
+
 ### Building a single version or variant
 
 Set `VERSION` and/or `VARIANT` environment variables to restrict any rake task to a subset of the matrix. This works for all tasks: `build`, `tag`, `push`, `template`, `scan`, etc.
