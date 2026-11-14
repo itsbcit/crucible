@@ -37,14 +37,17 @@ Update the Rakefile and support library in the existing code with [rake update](
 
 ### Exclude support files
 
-Update `.gitignore` to exclude the Rakefile library and `.build_id` marker file.
+Update `.gitignore` to exclude the Rakefile library, the `.build_id` marker file, and the `.iid-*` files that `rake build` writes with `podman build --iidfile`. Each holds the local image ID that `rake clean` and `rake patch` use to find the image in the local podman store, so it means nothing on any other machine.
 
 `.gitignore` contents:
 
 ```text
 .build_id
+.iid-*
 lib
 ```
+
+Repos that already committed `.iid-*` files keep tracking them until they are removed with `git rm --cached .iid-*`.
 
 ### Install Rakefile support files
 
