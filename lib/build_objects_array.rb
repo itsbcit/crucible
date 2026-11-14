@@ -57,9 +57,11 @@ def build_objects_array(options = {})
     version_test_command   = version_params['test_command'].nil?   ? test_command   : version_params['test_command']
     version_test_image     = version_params['test'].nil?           ? test_image     : version_params['test']
 
-    variants   = variants.deep_merge(version_variants)
+    # Merge into a local: reassigning variants carried one version's variant
+    # overrides into every version after it.
+    version_merged_variants = variants.deep_merge(version_variants)
 
-    variants.each do |variant, variant_params|
+    version_merged_variants.each do |variant, variant_params|
       variant_params         = variant_params.nil?                   ? {} : variant_params
       variant_labels         = variant_params['labels'].nil?         ? {} : variant_params['labels']
       variant_pre_build      = variant_params['pre_build'].nil?      ? [] : variant_params['pre_build']
