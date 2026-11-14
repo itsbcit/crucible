@@ -92,11 +92,18 @@ fixes ship without a commit or a tag. They run after `render` so each run
 gets a fresh build ID; without it the committed `.build_id` would be reused
 and every scheduled run would overwrite the same `b<id>` tag.
 
-Tag steps derive `VERSION` from `CI_COMMIT_TAG` (stripping a leading `v`)
-rather than hardcoding it. Combined with the `VERSION` filter in the
-`Rakefile`, which aborts when it matches no image, this makes the git tag and
-`metadata.yaml` check each other instead of relying on the operator
+Each versioned tag step runs only on a tag naming its own version
+(`when: ref` matching `refs/tags/<version>` or `refs/tags/v<version>`), with
+`VERSION` set statically like the build steps. A `check-tag` step runs on
+every tag and fails unless `${CI_COMMIT_TAG#v}` is a version in
+`metadata.yaml`. Without it, a tag matching no version would skip every tag
+step and go green with nothing published. Together they keep the git tag and
+`metadata.yaml` checking each other instead of relying on the operator
 remembering both edits.
+
+Through v1.4.8 every tag step instead exported `VERSION` from the tag, so in
+a multi-version repo all of them built the tagged version and raced to push
+the same images (TUX-6951).
 
 Repos with no `versions:` key still get a tag step, without the `VERSION`
 export: there is nothing for the tag to agree with, so any tag publishes
@@ -111,6 +118,11 @@ Keep these two properties when editing `lib/tasks/woodpecker.rake`:
   `:latest` on every push so consumers tracking it get unreleased commits.
 - A filter matching nothing must **abort**, never exit 0. An empty `$images`
   makes every task a silent no-op: a green pipeline that published nothing.
+- Every step selects **exactly one image**. An unset `VARIANT` matches all
+  variants, so in a repo with variants the base-variant steps run
+  `export VARIANT=''` (an empty `VARIANT` selects only the base image).
+  Without it they built and pushed every variant of their version, racing
+  the variant steps (TUX-6951).
 
 ## metadata-defaults.yaml holds vendored tool versions
 

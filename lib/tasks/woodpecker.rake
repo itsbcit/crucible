@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'shellwords'
+
 desc 'Render .woodpecker/build.yaml from the image matrix'
 task :woodpecker do
   raise 'metadata.yaml not found' unless File.exist?('metadata.yaml')
@@ -57,6 +59,25 @@ task :woodpecker do
   # package fixes ship without a commit or a new git tag. They run after the
   # render step like push builds do, so each scheduled run gets a fresh build
   # ID and its b<id> tag never overwrites an earlier build's.
+  # Scope each step to exactly its own image.
+  #
+  # An unset VARIANT matches every variant, so in a repo with variants the
+  # base-variant step must select the base image explicitly with an empty
+  # VARIANT; otherwise it builds (and in rebuild/tag steps, pushes) every
+  # variant of its version, racing the variant steps that push the same
+  # images (TUX-6951). The empty value is exported in the commands rather than
+  # set in the step environment, so it cannot be lost as an empty YAML value.
+  has_variants = all_images.any? { |i| !i.variant.empty? }
+  scope_env = lambda do |image|
+    env = base_env.merge('KEEP_BUILD' => '1')
+    env['VERSION'] = image.version unless image.version.empty?
+    env['VARIANT'] = image.variant unless image.variant.empty?
+    env
+  end
+  scope_commands = lambda do |image|
+    image.variant.empty? && has_variants ? ["export VARIANT=''"] : []
+  end
+
   [['build', when_push, []], ['rebuild', when_cron, ['rake tag', 'rake push']]].each do |prefix, step_when, publish|
     all_images.each do |image|
       variant_label = image.variant.empty? ? 'base' : image.variant
@@ -69,10 +90,6 @@ task :woodpecker do
         step_depends << dep_name
       end
 
-      env = base_env.merge('KEEP_BUILD' => '1')
-      env['VERSION'] = image.version unless image.version.empty?
-      env['VARIANT'] = image.variant unless image.variant.empty?
-
       steps << {
         'name'        => step_name,
         'image'       => ci_image,
@@ -80,8 +97,8 @@ task :woodpecker do
         'privileged'  => true,
         'depends_on'  => step_depends,
         'when'        => step_when,
-        'environment' => env,
-        'commands'    => auth_setup + [
+        'environment' => scope_env.call(image),
+        'commands'    => auth_setup + scope_commands.call(image) + [
           'rake install',
           'rake template',
           'rake build',
@@ -92,38 +109,58 @@ task :woodpecker do
     end
   end
 
-  # Tag steps: build what a "v<version>" git tag names.
+  # Tag steps: publish what a "v<version>" git tag names.
   #
-  # VERSION is derived from the tag rather than hardcoded, so the tag and
-  # metadata.yaml are checked against each other on every tagged build. The
-  # VERSION filter aborts when it matches no image, which turns a tag that
-  # disagrees with metadata.yaml into a failed pipeline instead of a silent
-  # rebuild of whatever version metadata.yaml happens to hold.
+  # Each versioned image's tag step runs only on a tag naming its own version
+  # ("<version>" or "v<version>"). Deriving VERSION from the tag in every step
+  # instead made every tag step of a multi-version repo build the tagged
+  # version, so N steps raced to push the same images (TUX-6951).
   #
-  # A leading "v" is stripped so both "v1.2.0" and "1.2.0" work.
+  # Gating on the ref alone would let a tag matching no version skip every
+  # step and go green with nothing published, so a check-tag step runs on
+  # every tag and fails unless the tag names a version in metadata.yaml. That
+  # keeps the git tag and metadata.yaml checked against each other.
   #
-  # Images with no version (no versions: key) still get a tag step, without
-  # the VERSION check: there is nothing for the tag to agree with, so any tag
-  # publishes them. Skipping them instead left unversioned repos (e.g. a base
-  # image published only as :latest) with no publish step at all, and every
-  # pipeline went green while nothing reached the registry.
+  # Images with no version (no versions: key) still get a tag step, on any
+  # tag: there is nothing for the tag to agree with. Skipping them instead
+  # left unversioned repos (e.g. a base image published only as :latest) with
+  # no publish step at all, and every pipeline went green while nothing
+  # reached the registry.
+  versions = all_images.map(&:version).reject(&:empty?).uniq
+  unless versions.empty?
+    patterns = versions.map { |v| Shellwords.escape(v) }.join('|')
+    steps << {
+      'name'     => 'check-tag',
+      'image'    => ci_image,
+      'pull'     => true,
+      'when'     => [{ 'event' => 'tag' }],
+      'commands' => [
+        "case \"${CI_COMMIT_TAG#v}\" in #{patterns}) ;; " \
+          "*) echo \"Tag $CI_COMMIT_TAG names no version in metadata.yaml: #{versions.join(' ')}\"; exit 1 ;; esac"
+      ]
+    }
+  end
+
   all_images.each do |image|
     variant_label = image.variant.empty? ? 'base' : image.variant
     step_name     = ['tag', image.version, variant_label].reject(&:empty?).join('-')
 
-    env = base_env.merge('KEEP_BUILD' => '1')
-    env['VARIANT'] = image.variant unless image.variant.empty?
-
-    version_from_tag = image.version.empty? ? [] : ['export VERSION="${CI_COMMIT_TAG#v}"']
+    step_when = if image.version.empty?
+                  [{ 'event' => 'tag' }]
+                else
+                  ["refs/tags/#{image.version}", "refs/tags/v#{image.version}"].map do |ref|
+                    { 'event' => 'tag', 'ref' => ref }
+                  end
+                end
 
     steps << {
       'name'        => step_name,
       'image'       => ci_image,
       'pull'        => true,
       'privileged'  => true,
-      'when'        => [{ 'event' => 'tag' }],
-      'environment' => env,
-      'commands'    => auth_setup + version_from_tag + [
+      'when'        => step_when,
+      'environment' => scope_env.call(image),
+      'commands'    => auth_setup + scope_commands.call(image) + [
         'rake install',
         'rake template',
         'rake build',
