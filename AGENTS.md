@@ -134,7 +134,14 @@ them. Do not skip them. Through v1.4.5 they got no tag step at all, which left
 an unversioned repo (e.g. `container-wolfi-base`, published only as
 `:latest`) with no publish step anywhere: green pipelines, nothing pushed.
 
-Keep these two properties when editing `lib/tasks/woodpecker.rake`:
+Keep these properties when editing `lib/tasks/woodpecker.rake`:
+
+- `rake update` runs **once per pipeline**: in `render` (push, cron) or
+  `setup` (tag), with every other step depending on it. Steps share the
+  workspace, and `update` deletes `lib/` before unpacking it again. Through
+  v1.6.0 every build and tag step ran it, so parallel steps could delete
+  `lib/` under one another (`LoadError: cannot load such file --
+  lib/tasks/default.rake`; container-wolfi-postgresql pipeline 21).
 
 - Only tag and cron-rebuild steps publish; push steps never do. Having push steps publish too means a tagged
   release commit builds twice and races to push identical tags, and it moves

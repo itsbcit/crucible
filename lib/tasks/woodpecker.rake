@@ -35,10 +35,16 @@ task :woodpecker do
 
   steps = []
 
-  # Every step runs "rake update", not "rake install": install refreshes lib/
+  # The pipeline runs "rake update", not "rake install": install refreshes lib/
   # but never the committed Rakefile, so CI ran a current lib/ with whatever
   # Rakefile was last committed (TUX-6950). update fetches both from the same
   # release, and every crucible Rakefile since v1.0.0 has it (TUX-6952).
+  #
+  # It runs once per pipeline, in render (push, cron) or setup (tag), and every
+  # other step depends on that one. Steps share the workspace, and update
+  # deletes lib/ before unpacking it again, so when every step ran it, a step
+  # that had finished could load lib/ just as a parallel step deleted it:
+  # "LoadError: cannot load such file -- lib/tasks/default.rake".
   #
   # render step: stamps a new build ID, re-renders Containerfiles and pipeline
   steps << {
@@ -104,7 +110,6 @@ task :woodpecker do
         'when'        => step_when,
         'environment' => scope_env.call(image),
         'commands'    => auth_setup + scope_commands.call(image) + [
-          'rake update',
           'rake template',
           'rake build',
           'rake test',
@@ -131,8 +136,22 @@ task :woodpecker do
   # left unversioned repos (e.g. a base image published only as :latest) with
   # no publish step at all, and every pipeline went green while nothing
   # reached the registry.
+  # setup step: fetches lib/ and the Rakefile once for the tag steps, which
+  # have no render step to depend on (see the note above render).
+  steps << {
+    'name'     => 'setup',
+    'image'    => ci_image,
+    'pull'     => true,
+    'when'     => [{ 'event' => 'tag' }],
+    'commands' => ['rake update']
+  }
+  tag_depends = ['setup']
+
   versions = all_images.map(&:version).reject(&:empty?).uniq
   unless versions.empty?
+    # Tag steps wait for check-tag too, so nothing is published for a tag
+    # that names no version.
+    tag_depends << 'check-tag'
     patterns = versions.map { |v| Shellwords.escape(v) }.join('|')
     steps << {
       'name'     => 'check-tag',
@@ -163,10 +182,10 @@ task :woodpecker do
       'image'       => ci_image,
       'pull'        => true,
       'privileged'  => true,
+      'depends_on'  => tag_depends,
       'when'        => step_when,
       'environment' => scope_env.call(image),
       'commands'    => auth_setup + scope_commands.call(image) + [
-        'rake update',
         'rake template',
         'rake build',
         'rake test',
