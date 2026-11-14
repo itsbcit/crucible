@@ -101,6 +101,12 @@ task :woodpecker do
         step_depends << dep_name
       end
 
+      # Scheduled rebuilds push only when the image's content fingerprint
+      # differs from the published one (see fingerprint.rb); otherwise every
+      # daily run moved every tag to a new digest with nothing changed.
+      step_env = scope_env.call(image)
+      step_env['CRUCIBLE_SKIP_UNCHANGED'] = '1' if prefix == 'rebuild'
+
       steps << {
         'name'        => step_name,
         'image'       => ci_image,
@@ -108,7 +114,7 @@ task :woodpecker do
         'privileged'  => true,
         'depends_on'  => step_depends,
         'when'        => step_when,
-        'environment' => scope_env.call(image),
+        'environment' => step_env,
         'commands'    => auth_setup + scope_commands.call(image) + [
           'rake template',
           'rake build',

@@ -412,7 +412,11 @@ Rebuild steps only run when a cron **named `rebuild`** exists for the repo; a cr
 woodpecker-cli repo cron add --repo ORG/REPO --name rebuild --branch main --schedule '0 11 * * *'
 ```
 
-Each scheduled run gets a new build ID, so its `b<id>` tag is new. Floating tags (`latest`, the version tag, and a `git_sha` tag) move to the rebuilt image.
+A scheduled rebuild publishes only when the image's content changed. `rake build` labels each image with `crucible.fingerprint`, a SHA-256 of the rendered Containerfile (without the `build_id` line) and the installed package list (apk, rpm or dpkg). Rebuild steps set `CRUCIBLE_SKIP_UNCHANGED=1`, and `rake push` then reads the label on each published non-build tag with `skopeo inspect` (no pull) and skips the image when every one matches. Without this, every run moved every tag to a new digest even when nothing changed, because each build stamps a new `build_id`.
+
+When a rebuild does push, it gets a new build ID, so its `b<id>` tag is new, and the floating tags (`latest`, the version tag, and a `git_sha` tag) move to the rebuilt image. Tag-triggered publishes always push. Anything that cannot be compared counts as changed and is pushed: an image with no shell or package manager (no fingerprint), no `skopeo` in the CI image, or a tag not yet published or published without the label.
+
+Not covered by the fingerprint: content that no package manager tracks, such as a binary compiled in a builder stage from a pinned source version, changes only when its Containerfile line does.
 
 ### depends_on
 

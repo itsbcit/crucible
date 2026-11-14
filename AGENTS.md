@@ -153,6 +153,25 @@ Keep these properties when editing `lib/tasks/woodpecker.rake`:
   `export VARIANT=''` (an empty `VARIANT` selects only the base image).
   Without it they built and pushed every variant of their version, racing
   the variant steps (TUX-6951).
+- Only **rebuild** steps set `CRUCIBLE_SKIP_UNCHANGED`. Tag steps must always
+  push: a tag is an explicit release, and skipping it would leave the git tag
+  pointing at nothing new with a green pipeline.
+
+## Unchanged rebuilds are not republished
+
+`lib/fingerprint.rb`: `rake build` labels each image `crucible.fingerprint`
+(rendered Containerfile minus `build_id`, plus the package list), and `rake
+push` with `CRUCIBLE_SKIP_UNCHANGED` skips an image whose label matches every
+published non-build tag (read with `skopeo inspect`, which woodpecker-crucible
+ships). Keep every failure mode on the push side: no fingerprint, no skopeo, a
+missing tag or a missing label must all push, never skip.
+
+Before v1.7.0 every daily rebuild republished, moving all tags to a new digest
+with nothing changed. That broke downstream "did the image change?" checks
+(pgsql-bby's quadlet playbook compares image IDs, so it would restart nodes
+daily) and cycled `b<id>` tags out of Harbor's keep-the-last-30 retention in
+about a week. Labelling repeats the build with `--label`; every layer is
+cached, so it costs seconds.
 
 ## metadata-defaults.yaml holds vendored tool versions
 

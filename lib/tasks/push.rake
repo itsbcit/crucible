@@ -20,6 +20,11 @@ task :push do
     puts "Image ID: #{image_id}"
     seen_images[image_id] = image.build_name_tag
 
+    if ENV['CRUCIBLE_SKIP_UNCHANGED'] && unchanged_since_published?(image, image_id)
+      puts 'Unchanged: every published tag already has this fingerprint, not pushing.'.green
+      next
+    end
+
     image.registries.each do |registry|
       if registry['url'].nil? or registry['url'] == 'docker.io'
         registry_url = ''
@@ -43,6 +48,37 @@ task :push do
 
         sh "podman push #{ron_name_tag}"
       end
+    end
+  end
+end
+
+# True when the image's fingerprint label matches the label on every published
+# non-build tag in every registry. Scheduled rebuilds set
+# CRUCIBLE_SKIP_UNCHANGED so they publish only real changes; tag-triggered
+# publishes always push. Anything unknown (no fingerprint, no skopeo, a tag not
+# published yet or published without a label) counts as changed.
+def unchanged_since_published?(image, image_id)
+  fingerprint = local_fingerprint(image_id)
+  return false if fingerprint.nil?
+
+  unless system('command -v skopeo >/dev/null 2>&1')
+    puts 'skopeo not found: cannot compare with the published image, pushing.'.yellow
+    return false
+  end
+
+  # b<id> tags are new on every build, so they never match and are not
+  # compared; they are skipped along with the rest when nothing changed.
+  stable_tags = image.tags.reject { |tag| tag.include?(image.build_suffix) }
+  return false if stable_tags.empty?
+
+  image.registries.all? do |registry|
+    registry_url = registry['url'].nil? || registry['url'] == 'docker.io' ? 'docker.io' : registry['url']
+    ron_name = image.parts_join('/', registry_url, registry['org_name'], image.image_name)
+
+    stable_tags.all? do |tag|
+      published = remote_fingerprint("#{ron_name}:#{tag}")
+      puts "  #{ron_name}:#{tag}: #{published == fingerprint ? 'same' : 'differs'}"
+      published == fingerprint
     end
   end
 end
