@@ -21,6 +21,7 @@ def build_objects_array(options = {})
   image_name     = metadata.fetch('image_name',     default_metadata['image_name'])
   labels         = metadata.fetch('labels',         default_metadata['labels'])
   maintainer     = metadata.fetch('maintainer',     default_metadata['maintainer'])
+  pre_build      = metadata.fetch('pre_build',      default_metadata['pre_build'])
   push_image     = metadata.fetch('push',           default_metadata['push'])
   registries     = metadata.fetch('registries',     default_metadata['registries'])
   tag_build_id   = metadata.fetch('tag_build_id',   default_metadata['tag_build_id'])
@@ -40,6 +41,7 @@ def build_objects_array(options = {})
   versions.each do |version, version_params|
     version_params         = version_params.nil?                   ? {} : version_params
     version_labels         = version_params['labels'].nil?         ? {} : version_params['labels']
+    version_pre_build      = version_params['pre_build'].nil?      ? [] : version_params['pre_build']
     version_registries     = version_params['registries'].nil?     ? [] : version_params['registries']
     version_tags           = version_params['tags'].nil?           ? [] : version_params['tags']
     version_template_files = version_params['template_files'].nil? ? [] : version_params['template_files']
@@ -60,6 +62,7 @@ def build_objects_array(options = {})
     variants.each do |variant, variant_params|
       variant_params         = variant_params.nil?                   ? {} : variant_params
       variant_labels         = variant_params['labels'].nil?         ? {} : variant_params['labels']
+      variant_pre_build      = variant_params['pre_build'].nil?      ? [] : variant_params['pre_build']
       variant_registries     = variant_params['registries'].nil?     ? [] : variant_params['registries']
       variant_tags           = variant_params['tags'].nil?           ? [] : variant_params['tags']
       variant_template_files = variant_params['template_files'].nil? ? [] : variant_params['template_files']
@@ -92,6 +95,7 @@ def build_objects_array(options = {})
         image_name: image_name,
         labels: base_labels.deep_merge(labels).deep_merge(version_labels).deep_merge(variant_labels),
         maintainer: variant_maintainer,
+        pre_build: (pre_build + version_pre_build + variant_pre_build).uniq,
         push_image: variant_push_image,
         registries: merged_registries,
         tag_build_id: variant_tag_build_id,

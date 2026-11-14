@@ -32,6 +32,7 @@ task :debug do
     # show predicted build task commands:
     puts 'Build task:'.yellow
     build_tag = image.build_name_tag
+    image.pre_build.each { |command| puts command }
     puts "podman build --platform #{image.build_platform} --iidfile #{image.iidfile} -f #{image.dockerfile} -t #{build_tag} ."
 
     # show predicted scan task commands:

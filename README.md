@@ -194,6 +194,19 @@ Build the container image(s) using `podman build` (buildah internally).
 
 `rake build`
 
+#### Pre-build commands
+
+`pre_build` lists shell commands that `rake build` runs from the repo root before building an image, for things a `podman build` step cannot do itself, such as building apk packages with melange (which needs a privileged container). Set it at the top level, per version or per variant; the levels are concatenated in that order. Commands are rendered with ERB like tags, so they can use `version`, `variant` and `vars`. A command that fails stops the build.
+
+```yaml
+versions:
+  '17':
+    pre_build:
+      - './melange/build.sh <%= version %> <%= variant %>'
+```
+
+The commands run on every `rake build` of that image, locally and in CI, so make them safe to repeat. `rake debug` shows them under the build task.
+
 ### tag
 
 Add standard and `metadata.yaml` configured tags to the image(s).

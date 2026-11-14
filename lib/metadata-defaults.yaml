@@ -19,6 +19,7 @@ base_tags:
 tags:
   - '<%= tag_join(version, variant, "latest") %>'
 template_files: []
+pre_build: []
 variants:
   '': {}
 base_vars:

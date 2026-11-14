@@ -14,6 +14,7 @@ class ContainerImage
     image_name:,
     labels:         {},
     maintainer:     '',
+    pre_build:      [],
     push_image:     true,
     registries:     [],
     tag_build_id:   true,
@@ -33,6 +34,7 @@ class ContainerImage
     @image_name         = image_name
     @labels             = labels
     @maintainer         = maintainer
+    @pre_build          = pre_build
     @push_image         = push_image
     @registries         = registries
     @tag_build_id       = tag_build_id
@@ -122,6 +124,15 @@ class ContainerImage
     rendered_tags = render_array_values(@tags, binding)
     rendered_tags.reject! { |v| v.to_s.empty? }
     rendered_tags.uniq
+  end
+
+  # Shell commands "rake build" runs from the repo root before building this
+  # image, e.g. to build packages the Containerfile installs. ERB-rendered,
+  # so they can use version, variant and vars.
+  def pre_build
+    rendered_commands = render_array_values(@pre_build, binding)
+    rendered_commands.reject! { |v| v.to_s.strip.empty? }
+    rendered_commands
   end
 
   # TODO: render ERB vars and labels
