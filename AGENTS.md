@@ -40,15 +40,25 @@ the way to test an unreleased fix in a consuming repo.
 ## Cutting a release
 
 Build the zip from a clean `git archive` export, not the working tree, so no
-local cruft is included. Name both assets correctly on disk and pass them to
+local cruft is included. **Tag first, then archive the tag**: `git archive`
+stamps the release into `lib/version.rb` and the `Rakefile` (export-subst,
+see `.gitattributes`), and archiving before the tag exists stamps the
+previous release's name. Name both assets correctly on disk and pass them to
 `gh release create` in one command:
 
 ```bash
-mkdir -p /tmp/rel && git archive HEAD | tar -x -C /tmp/rel
+git tag vX.Y.Z && git push origin vX.Y.Z
+mkdir -p /tmp/rel && git archive vX.Y.Z | tar -x -C /tmp/rel
+grep -q "'vX.Y.Z'" /tmp/rel/lib/version.rb || echo 'STAMP WRONG, do not publish'
 (cd /tmp/rel && zip -rq /tmp/crucible-lib.zip lib)
 cp /tmp/rel/Rakefile /tmp/Rakefile
 gh release create vX.Y.Z /tmp/crucible-lib.zip /tmp/Rakefile --title vX.Y.Z --notes '...'
 ```
+
+`git archive` expands only one `%(describe)` per archive, so only
+`lib/version.rb` uses it; the `Rakefile` carries the commit hash (`%H`), which
+has no such limit. Do not add a second `%(describe)` placeholder anywhere: it
+would be left unexpanded.
 
 Do **not** use `gh release upload`'s `local#published-name` rename syntax. It
 produces an asset the API reports as `state=uploaded` while every GET of its
@@ -57,6 +67,14 @@ release has to be deleted and recreated with its assets in one command.
 
 The zip must contain a top-level `lib/` directory, because `rake install`
 unzips it into the consumer's working directory.
+
+## Release stamps
+
+`rake version` shows which release a consumer's `Rakefile` and `lib/` came
+from, and every other task warns when the two differ (skipped for `install`
+and `update`, which are how it gets fixed). `Rakefile`s from before v1.4.9
+carry no stamp and are reported as older than v1.4.9. In crucible's own
+checkout the placeholders stay unexpanded and nothing is compared.
 
 ### Always verify with a real GET
 

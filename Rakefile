@@ -6,6 +6,11 @@ require 'tempfile'
 require 'yaml'
 require 'open-uri'
 
+# Release commit, stamped by git archive (see .gitattributes). lib/ compares
+# it with its own to warn when the Rakefile and lib/ come from different
+# releases.
+CRUCIBLE_RAKEFILE_COMMIT = '$Format:%H$'
+
 Dir.glob('lib/*.rb').each { |l| load l unless File.exist?("local/#{l[4..-1]}") } if Dir.exist?('lib')
 Dir.glob('local/*.rb').each { |l| load l } if Dir.exist?('local')
 

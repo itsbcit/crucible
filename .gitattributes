@@ -1,0 +1,5 @@
+# Stamp the release into the release assets (see lib/version.rb). git archive
+# expands only one %(describe) per archive, so only lib/version.rb uses it;
+# the Rakefile carries the commit hash.
+Rakefile       export-subst
+lib/version.rb export-subst

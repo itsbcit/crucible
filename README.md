@@ -164,6 +164,14 @@ To install from a specific branch or tag instead of the latest release:
 
 When `CRUCIBLE_REF` is set, both `lib/` and the `Rakefile` are fetched from that ref's archive. This is useful for testing unreleased crucible changes in a consumer repo before cutting a release.
 
+### version
+
+Show the crucible release that the `Rakefile` and `lib/` came from, and whether they match.
+
+`rake version`
+
+Every other task prints a warning when they differ. CI runs `rake install`, which refreshes `lib/` but not the committed `Rakefile`, so the warning means the `Rakefile` needs `rake update` and a commit.
+
 ### update
 
 `Rakefile` self-update. Download and overwrite the `Rakefile` and `lib/` directory with the [latest release](https://github.com/itsbcit/crucible/releases/latest).
