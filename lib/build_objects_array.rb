@@ -107,5 +107,10 @@ def build_objects_array(options = {})
     end
   end
 
-  objects_array
+  # Apply the VERSION/VARIANT filter here, not in the Rakefile, so it reaches
+  # consumers with a stale committed Rakefile (see filter_images.rb). Callers
+  # that need the whole matrix, like "rake woodpecker", pass filter: false.
+  return objects_array unless options.fetch(:filter, true)
+
+  filter_images(objects_array)
 end

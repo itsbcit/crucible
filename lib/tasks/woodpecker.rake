@@ -7,7 +7,10 @@ task :woodpecker do
 
   all_images = build_objects_array(
     metadata: YAML.safe_load(File.read('metadata.yaml')),
-    default_metadata: YAML.safe_load(File.read('lib/metadata-defaults.yaml'))
+    default_metadata: YAML.safe_load(File.read('lib/metadata-defaults.yaml')),
+    # The pipeline is generated from the whole matrix even if VERSION or
+    # VARIANT is set in the calling environment.
+    filter: false
   )
 
   ci_image  = 'bcit.io/library/woodpecker-crucible:latest'

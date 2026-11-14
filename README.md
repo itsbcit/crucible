@@ -52,6 +52,8 @@ lib
 
 The majority of the Rakefile support code is contained in the `lib` directory, which should be excluded from individual Git repositories using this system. This way, the latest release code is always used.
 
+The `Rakefile` itself is committed, and `rake install` (which is what CI runs) does not replace it. Run `rake update` and commit the result to pick up `Rakefile` changes.
+
 See [`rake install`](#install)
 
 This will pull the latest release of the `lib` support files from GitHub.
@@ -126,7 +128,7 @@ Locally the SHA names `HEAD` even when the working tree has uncommitted changes,
 
 ### Building a single version or variant
 
-Set `VERSION` and/or `VARIANT` environment variables to restrict any rake task to a subset of the matrix. This works for all tasks: `build`, `tag`, `push`, `template`, `scan`, etc.
+Set `VERSION` and/or `VARIANT` environment variables to restrict any rake task to a subset of the matrix. This works for all tasks: `build`, `tag`, `push`, `template`, `scan`, etc. A filter that matches no image aborts with the list of available versions and variants. `rake woodpecker` ignores the filter and always renders the whole matrix.
 
 ```bash
 VERSION=17 rake build               # build all variants of version 17

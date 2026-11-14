@@ -3,9 +3,25 @@
 Guidance for AI coding agents working in this repo.
 
 Crucible is the container build harness used by BCIT `container-*` repos. It
-is vendored into each consumer as `lib/` plus a `Rakefile`, both of which are
-**gitignored there**, so a consumer's vendored copy can be arbitrarily old
-with nothing in its git history to show it.
+is vendored into each consumer as `lib/` plus a `Rakefile`. `lib/` is
+gitignored there, so a consumer's copy can be arbitrarily old with nothing in
+its git history to show it.
+
+## Put logic in lib/, not the Rakefile
+
+Consumers **commit** their `Rakefile`, and generated pipelines run only
+`rake install`, which refreshes `lib/` and never the `Rakefile` (only
+`rake update`, or `CRUCIBLE_REF=<ref> rake install`, replaces it). So a change
+to the `Rakefile` reaches a consumer only when someone remembers to run
+`rake update` and commit the result, while a change in `lib/` reaches every
+consumer on its next CI run.
+
+Keep the `Rakefile` a thin loader and put behaviour in `lib/`. The
+`VERSION`/`VARIANT` filter was added to the `Rakefile` in v1.4.2 and never
+reached `container-qgis-server`, whose committed `Rakefile` predated it: every
+per-version Woodpecker step built every version (TUX-6950). It moved to
+`lib/filter_images.rb`, applied by `build_objects_array`, in v1.4.8. Callers
+that need the whole matrix pass `filter: false`, as `rake woodpecker` does.
 
 ## A fix here reaches nobody until a release is cut
 
