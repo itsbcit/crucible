@@ -77,7 +77,9 @@ unzips it into the consumer's working directory.
 from, and every other task warns when the two differ (skipped for `install`
 and `update`, which are how it gets fixed). `Rakefile`s from before v1.5.0
 carry no stamp and are reported as older than v1.5.0. In crucible's own
-checkout the placeholders stay unexpanded and nothing is compared.
+checkout the placeholders stay unexpanded and nothing is compared. GitHub's
+`/archive/<ref>.zip` applies export-subst too, so a `CRUCIBLE_REF` install is
+stamped with `git describe` output such as `v1.4.8-4-g0c4b5b9`.
 
 ### Always verify with a real GET
 
