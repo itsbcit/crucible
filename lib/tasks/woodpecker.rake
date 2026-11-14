@@ -35,6 +35,11 @@ task :woodpecker do
 
   steps = []
 
+  # Every step runs "rake update", not "rake install": install refreshes lib/
+  # but never the committed Rakefile, so CI ran a current lib/ with whatever
+  # Rakefile was last committed (TUX-6950). update fetches both from the same
+  # release, and every crucible Rakefile since v1.0.0 has it (TUX-6952).
+  #
   # render step: stamps a new build ID, re-renders Containerfiles and pipeline
   steps << {
     'name'        => 'render',
@@ -43,7 +48,7 @@ task :woodpecker do
     'privileged'  => true,
     'when'        => when_push + when_cron,
     'environment' => base_env,
-    'commands'    => auth_setup + ['rake install', 'rake template', 'rake woodpecker']
+    'commands'    => auth_setup + ['rake update', 'rake template', 'rake woodpecker']
   }
 
   # One build step per version x variant.
@@ -99,7 +104,7 @@ task :woodpecker do
         'when'        => step_when,
         'environment' => scope_env.call(image),
         'commands'    => auth_setup + scope_commands.call(image) + [
-          'rake install',
+          'rake update',
           'rake template',
           'rake build',
           'rake test',
@@ -161,7 +166,7 @@ task :woodpecker do
       'when'        => step_when,
       'environment' => scope_env.call(image),
       'commands'    => auth_setup + scope_commands.call(image) + [
-        'rake install',
+        'rake update',
         'rake template',
         'rake build',
         'rake test',

@@ -9,12 +9,15 @@ its git history to show it.
 
 ## Put logic in lib/, not the Rakefile
 
-Consumers **commit** their `Rakefile`, and generated pipelines run only
-`rake install`, which refreshes `lib/` and never the `Rakefile` (only
-`rake update`, or `CRUCIBLE_REF=<ref> rake install`, replaces it). So a change
-to the `Rakefile` reaches a consumer only when someone remembers to run
-`rake update` and commit the result, while a change in `lib/` reaches every
-consumer on its next CI run.
+Consumers **commit** their `Rakefile`. `rake install` refreshes `lib/` and
+never the `Rakefile` (only `rake update`, or `CRUCIBLE_REF=<ref> rake install`,
+replaces it). Through v1.4.8 generated pipelines ran `rake install`, so CI
+ran a current `lib/` with whatever `Rakefile` was last committed. Since
+v1.5.0 they run `rake update`, which fetches both from the same release
+(TUX-6952); every crucible `Rakefile` since v1.0.0 has that task, so it works
+however old the committed copy is. That only helps once a consumer's
+pipeline has been regenerated, and a local checkout still runs its committed
+`Rakefile` until someone runs `rake update`.
 
 Keep the `Rakefile` a thin loader and put behaviour in `lib/`. The
 `VERSION`/`VARIANT` filter was added to the `Rakefile` in v1.4.2 and never
@@ -72,8 +75,8 @@ unzips it into the consumer's working directory.
 
 `rake version` shows which release a consumer's `Rakefile` and `lib/` came
 from, and every other task warns when the two differ (skipped for `install`
-and `update`, which are how it gets fixed). `Rakefile`s from before v1.4.9
-carry no stamp and are reported as older than v1.4.9. In crucible's own
+and `update`, which are how it gets fixed). `Rakefile`s from before v1.5.0
+carry no stamp and are reported as older than v1.5.0. In crucible's own
 checkout the placeholders stay unexpanded and nothing is compared.
 
 ### Always verify with a real GET

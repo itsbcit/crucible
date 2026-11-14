@@ -16,7 +16,7 @@ end
 
 # A Rakefile that does not match lib/ is how TUX-6950 happened: CI's
 # "rake install" refreshes lib/ but never the committed Rakefile. Rakefiles
-# from before v1.4.9 define no CRUCIBLE_RAKEFILE_COMMIT at all.
+# from before v1.5.0 define no CRUCIBLE_RAKEFILE_COMMIT at all.
 def crucible_version_mismatch
   lib_commit = crucible_stamp(CRUCIBLE_LIB_COMMIT)
   return nil if lib_commit.nil? # crucible's own checkout: nothing to compare
@@ -24,7 +24,7 @@ def crucible_version_mismatch
   rakefile_commit = crucible_rakefile_commit
   return nil if rakefile_commit == lib_commit
 
-  rakefile = rakefile_commit ? rakefile_commit[0, 7] : 'older than v1.4.9'
+  rakefile = rakefile_commit ? rakefile_commit[0, 7] : 'older than v1.5.0'
   "Rakefile (#{rakefile}) does not match crucible lib " \
     "(#{crucible_stamp(CRUCIBLE_LIB_VERSION) || lib_commit[0, 7]}). " \
     'Run "rake update" and commit the Rakefile.'
