@@ -12,6 +12,11 @@ task :scan do
 
     puts "Image: #{image.build_name_tag}".pink
 
+    # Report-only still prints the full findings table; it only stops trivy's
+    # exit code from failing the task.
+    exit_code = image.scan_report_only? ? 0 : 1
+    puts 'Report only: findings will not fail the build'.yellow if exit_code.zero?
+
     image_id = image.image_id
     if image_id.nil?
       puts "Image #{image.build_name_tag} has not been built.".red
@@ -42,7 +47,7 @@ task :scan do
     begin
       sh "podman save --format docker-archive -o #{archive} #{image_id}"
       sh "trivy image --scanners vuln --skip-version-check " \
-         "--exit-code 1 --severity #{severity} --input #{archive}"
+         "--exit-code #{exit_code} --severity #{severity} --input #{archive}"
     ensure
       FileUtils.rm_f(archive)
     end

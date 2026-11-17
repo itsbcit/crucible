@@ -13,6 +13,7 @@ tag: true
 tag_build_id: true
 push: true
 test_command:
+scan_report_only: false
 base_tags:
   - '<%= tag_join(version, variant) %>'
   - '<%= tag_build_id ? tag_join(version, variant, build_suffix) : nil %>'

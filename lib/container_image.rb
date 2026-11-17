@@ -17,6 +17,7 @@ class ContainerImage
     pre_build:      [],
     push_image:     true,
     registries:     [],
+    scan_report_only: false,
     tag_build_id:   true,
     tag_image:      true,
     tags:           [],
@@ -37,6 +38,7 @@ class ContainerImage
     @pre_build          = pre_build
     @push_image         = push_image
     @registries         = registries
+    @scan_report_only   = scan_report_only
     @tag_build_id       = tag_build_id
     @tag_image          = tag_image
     @tags               = tags
@@ -176,6 +178,14 @@ class ContainerImage
 
   def test_image?
     return @test_image ? true : false
+  end
+
+  # Report vulnerabilities without failing the build (metadata scan_report_only,
+  # or SCAN_REPORT_ONLY=1 for a one-off run).
+  def scan_report_only?
+    return true if ENV['SCAN_REPORT_ONLY'] == '1'
+
+    return @scan_report_only ? true : false
   end
 
   def tag_image?

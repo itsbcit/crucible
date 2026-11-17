@@ -242,6 +242,19 @@ Scan built container images for vulnerabilities using [Trivy](https://trivy.dev/
 
 `SEVERITY=CRITICAL rake scan` — only fail on CRITICAL vulnerabilities
 
+`SCAN_REPORT_ONLY=1 rake scan`: print the findings but never fail
+
+To make an image's scan report-only in every run, including the generated Woodpecker pipeline, set `scan_report_only: true` in `metadata.yaml`. Like `test`, it can be set at the top level, per version or per variant:
+
+```yaml
+scan_report_only: true      # every image
+versions:
+  'prod':
+    scan_report_only: false # except prod, which still fails on findings
+```
+
+A report-only scan still prints trivy's full table in the build log.
+
 Requires `trivy` to be installed. See [aquasecurity/trivy](https://github.com/aquasecurity/trivy) for installation.
 
 ### push
