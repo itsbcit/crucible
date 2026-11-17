@@ -46,8 +46,10 @@ task :scan do
                         "trivy-#{image.image_name}-#{image.build_suffix}.tar")
     begin
       sh "podman save --format docker-archive -o #{archive} #{image_id}"
-      sh "trivy image --scanners vuln --skip-version-check " \
-         "--exit-code #{exit_code} --severity #{severity} --input #{archive}"
+      sh ['trivy image --scanners vuln --skip-version-check',
+          "--exit-code #{exit_code} --severity #{severity}",
+          image.scan_ignore_unfixed_flag,
+          "--input #{archive}"].compact.join(' ')
     ensure
       FileUtils.rm_f(archive)
     end

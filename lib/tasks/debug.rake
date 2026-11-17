@@ -37,7 +37,10 @@ task :debug do
 
     # show predicted scan task commands:
     puts 'Scan task:'.yellow
-    puts "trivy image --exit-code #{image.scan_report_only? ? 0 : 1} --severity #{ENV.fetch('SEVERITY', 'HIGH,CRITICAL')} <image_id>"
+    puts ["trivy image --exit-code #{image.scan_report_only? ? 0 : 1}",
+          "--severity #{ENV.fetch('SEVERITY', 'HIGH,CRITICAL')}",
+          image.scan_ignore_unfixed_flag,
+          '<image_id>'].compact.join(' ')
 
     # show predicted tag task commands:
     puts 'Tag task:'.yellow

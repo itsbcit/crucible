@@ -17,6 +17,7 @@ class ContainerImage
     pre_build:      [],
     push_image:     true,
     registries:     [],
+    scan_ignore_unfixed: nil,
     scan_report_only: false,
     tag_build_id:   true,
     tag_image:      true,
@@ -38,6 +39,7 @@ class ContainerImage
     @pre_build          = pre_build
     @push_image         = push_image
     @registries         = registries
+    @scan_ignore_unfixed = scan_ignore_unfixed
     @scan_report_only   = scan_report_only
     @tag_build_id       = tag_build_id
     @tag_image          = tag_image
@@ -178,6 +180,16 @@ class ContainerImage
 
   def test_image?
     return @test_image ? true : false
+  end
+
+  # trivy's --ignore-unfixed, only when metadata sets scan_ignore_unfixed. A
+  # command-line flag beats TRIVY_IGNORE_UNFIXED and trivy.yaml, so passing
+  # nothing when it is unset leaves those in charge.
+  def scan_ignore_unfixed_flag
+    case @scan_ignore_unfixed
+    when true  then '--ignore-unfixed'
+    when false then '--ignore-unfixed=false'
+    end
   end
 
   # Report vulnerabilities without failing the build (metadata scan_report_only,

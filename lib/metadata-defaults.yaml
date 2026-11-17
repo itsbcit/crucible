@@ -14,6 +14,8 @@ tag_build_id: true
 push: true
 test_command:
 scan_report_only: false
+# unset: no flag, so trivy.yaml or TRIVY_IGNORE_UNFIXED decide
+scan_ignore_unfixed:
 base_tags:
   - '<%= tag_join(version, variant) %>'
   - '<%= tag_build_id ? tag_join(version, variant, build_suffix) : nil %>'

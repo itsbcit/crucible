@@ -255,6 +255,16 @@ versions:
 
 A report-only scan still prints trivy's full table in the build log.
 
+`scan_ignore_unfixed` controls whether vulnerabilities with no fix available count. It is set the same way (top level, per version or per variant):
+
+| `metadata.yaml` | `rake scan` passes | Effect |
+|---|---|---|
+| unset (default) | nothing | trivy decides: `TRIVY_IGNORE_UNFIXED`, then `trivy.yaml` in the repo, then trivy's default (unfixed findings count) |
+| `scan_ignore_unfixed: true` | `--ignore-unfixed` | only fixable findings are reported or fail the scan |
+| `scan_ignore_unfixed: false` | `--ignore-unfixed=false` | unfixed findings count, whatever `trivy.yaml` or the environment says |
+
+trivy's precedence is command-line flag, then `TRIVY_*` environment variable, then `trivy.yaml`, so a value set here always wins. Leave it unset to keep control in `trivy.yaml`.
+
 Requires `trivy` to be installed. See [aquasecurity/trivy](https://github.com/aquasecurity/trivy) for installation.
 
 ### push

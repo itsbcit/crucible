@@ -25,6 +25,9 @@ def build_objects_array(options = {})
   push_image     = metadata.fetch('push',           default_metadata['push'])
   registries     = metadata.fetch('registries',     default_metadata['registries'])
   scan_report_only = metadata.fetch('scan_report_only', default_metadata['scan_report_only'])
+  # Not metadata.fetch: its nil handling builds default.class.new, and nil
+  # ("leave it to trivy") is the default here.
+  scan_ignore_unfixed = metadata['scan_ignore_unfixed']
   tag_build_id   = metadata.fetch('tag_build_id',   default_metadata['tag_build_id'])
   tag_image      = metadata.fetch('tag',            default_metadata['tag'])
   tags           = metadata.fetch('tags',           default_metadata['tags']) + base_tags
@@ -54,6 +57,7 @@ def build_objects_array(options = {})
     version_maintainer     = version_params['maintainer'].nil?     ? maintainer     : version_params['maintainer']
     version_push_image     = version_params['push'].nil?           ? push_image     : version_params['push']
     version_scan_report_only = version_params['scan_report_only'].nil? ? scan_report_only : version_params['scan_report_only']
+    version_scan_ignore_unfixed = version_params['scan_ignore_unfixed'].nil? ? scan_ignore_unfixed : version_params['scan_ignore_unfixed']
     version_tag_build_id   = version_params['tag_build_id'].nil?   ? tag_build_id   : version_params['tag_build_id']
     version_tag_image      = version_params['tag'].nil?            ? tag_image      : version_params['tag']
     version_test_command   = version_params['test_command'].nil?   ? test_command   : version_params['test_command']
@@ -79,6 +83,10 @@ def build_objects_array(options = {})
       variant_maintainer     = variant_params['maintainer'].nil?     ? version_maintainer     : variant_params['maintainer']
       variant_push_image     = variant_params['push'].nil?           ? version_push_image     : variant_params['push']
       variant_scan_report_only = variant_params['scan_report_only'].nil? ? version_scan_report_only : variant_params['scan_report_only']
+      variant_scan_ignore_unfixed = variant_params['scan_ignore_unfixed'].nil? ? version_scan_ignore_unfixed : variant_params['scan_ignore_unfixed']
+      unless [nil, true, false].include?(variant_scan_ignore_unfixed)
+        raise("scan_ignore_unfixed must be true, false or unset, not #{variant_scan_ignore_unfixed.inspect}")
+      end
       variant_tag_build_id   = variant_params['tag_build_id'].nil?   ? version_tag_build_id   : variant_params['tag_build_id']
       variant_tag_image      = variant_params['tag'].nil?            ? version_tag_image      : variant_params['tag']
       variant_test_command   = variant_params['test_command'].nil?   ? version_test_command   : variant_params['test_command']
@@ -103,6 +111,7 @@ def build_objects_array(options = {})
         pre_build: (pre_build + version_pre_build + variant_pre_build).uniq,
         push_image: variant_push_image,
         registries: merged_registries,
+        scan_ignore_unfixed: variant_scan_ignore_unfixed,
         scan_report_only: variant_scan_report_only,
         tag_build_id: variant_tag_build_id,
         tag_image: variant_tag_image,
