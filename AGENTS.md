@@ -30,7 +30,9 @@ that need the whole matrix pass `filter: false`, as `rake woodpecker` does.
 
 `ruby test/all.rb` runs the minitest suite in `test/`. It needs Ruby and the
 `minitest` gem only (no podman, trivy, skopeo or network), takes a few
-seconds, and must pass before a release. Each test runs in its own temp
+seconds, and must pass before a release. GitHub Actions
+(`.github/workflows/test.yml`) runs it on Ruby 3.3, 3.4 and 4.0 for every
+push to `master` and every pull request. Each test runs in its own temp
 directory, because `ContainerImage` reads and writes `.build_id` in the
 working directory. `generate_pipeline` runs the real `rake woodpecker` in a
 scratch consumer repo (the `Rakefile` plus `lib/`), so the pipeline tests
@@ -60,7 +62,7 @@ https://github.com/itsbcit/crucible/releases/latest/download/crucible-lib.zip
 https://github.com/itsbcit/crucible/releases/latest/download/Rakefile
 ```
 
-Releases are cut **by hand**; there is no workflow in `.github/`. After
+Releases are cut **by hand**; the only workflow in `.github/` runs the tests. After
 committing a fix here, say so explicitly rather than implying consumers have
 it. `CRUCIBLE_REF=<ref> rake install` pulls a specific branch or tag and is
 the way to test an unreleased fix in a consuming repo.
