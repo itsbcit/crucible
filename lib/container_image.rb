@@ -51,8 +51,9 @@ class ContainerImage
     @vars               = vars
     @version            = version
 
-    # check for a forced build id in ENV
-    @build_id = ENV['BUILD_ID'].nil? ? read_build_id : ENV['BUILD_ID']
+    # check for a forced build id in ENV (a String, so to_i: zero? below
+    # raised NoMethodError, which broke every task when BUILD_ID was set)
+    @build_id = ENV['BUILD_ID'].nil? ? read_build_id : ENV['BUILD_ID'].to_i
 
     # create a new build id if zero
     new_build_id if @build_id.nil? || @build_id.zero?
