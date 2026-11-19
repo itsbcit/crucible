@@ -281,7 +281,7 @@ Render `.woodpecker/build.yaml` from the image matrix in `metadata.yaml`. Each v
 
 The generated file should be committed to the repository. Re-run `rake woodpecker` whenever `metadata.yaml` changes and commit the result.
 
-See [Woodpecker CI integration](#woodpecker-ci-integration) for the full parallel build workflow.
+See [Woodpecker CI integration](#woodpecker-ci-integration) for the full parallel build workflow, and [Extra steps](#extra-steps) for adding your own steps before or after the generated ones.
 
 ### clean
 
@@ -453,6 +453,50 @@ variants:
 ```
 
 `rake woodpecker` uses this to add `depends_on` to the generated Woodpecker step, so `build-17-pgvector` waits for `build-17-base` to complete before starting. Variants without `depends_on` run fully in parallel.
+
+### Extra steps
+
+Steps the generator does not know about, such as fetching source from another repository before the build or updating a deployment repository after a release, are declared under `woodpecker:` in `metadata.yaml`. Each entry is a raw Woodpecker step, copied into `.woodpecker/build.yaml` as written:
+
+```yaml
+woodpecker:
+  pre_steps:
+    - name: fetch-source
+      image: alpine/git:latest
+      environment:
+        GIT_USER:
+          from_secret: git_user
+        GIT_PASS:
+          from_secret: git_pass
+      commands:
+        - git clone "https://$GIT_USER:$GIT_PASS@git.example.com/app.git" src
+  post_steps:
+    - name: update-manifest
+      image: alpine/git:latest
+      commands:
+        - ./update-manifest.sh
+  post_steps_on_rebuild: false   # default
+```
+
+Only `when:` and `depends_on` are filled in, and only when the entry leaves them out:
+
+| | `pre_steps` | `post_steps` |
+|---|---|---|
+| Position in the file | before the generated steps | after them |
+| Default `when:` | every event a build, rebuild or tag step runs on | every event a tag step runs on, plus the `rebuild` cron with `post_steps_on_rebuild: true` |
+| Default `depends_on` | none (runs alongside `render` / `setup`) | every tag step, plus every rebuild step with `post_steps_on_rebuild: true` |
+| Wiring into generated steps | added to `depends_on` of every `build-*`, `rebuild-*` and `tag-*` step | none |
+
+A `when:` you write is kept as given, so a pre step can be narrower than the steps it feeds (e.g. push only).
+
+Every dependency the generator adds is marked `optional: true` (Woodpecker 3.15 or later). Woodpecker removes steps whose `when:` does not match before resolving `depends_on`, and fails the pipeline on a missing dependency that is not optional. A `v18` tag pipeline has no `tag-17-*` steps, and a narrowed pre step is absent from some events.
+
+Things to know:
+
+- **Secrets:** give the step its own `environment` with `from_secret`, as above. Generated steps only receive `harbor_config`.
+- **Shared workspace:** all steps share one workspace, and pre steps run in parallel with `render` / `setup`, which delete and re-extract `lib/`. A pre step must not use `lib/` or the `Rakefile`, and must write to its own paths.
+- **Post steps on rebuild:** a scheduled rebuild skips pushing unchanged images (see [Scheduled rebuilds](#scheduled-rebuilds)), so its `b<id>` tag may not exist in the registry. A post step that points a deployment at the new `b<id>` tag should not run on rebuilds, or must check that the tag exists first.
+- **Validation:** `rake woodpecker` fails on an entry that is not a mapping, a missing or duplicated `name`, a name that clashes with a generated one (`render`, `setup`, `check-tag`, `build-*`, `rebuild-*`, `tag-*`), and any other key under `woodpecker:`.
 
 ### Authentication
 

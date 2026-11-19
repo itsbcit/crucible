@@ -7,8 +7,12 @@ task :woodpecker do
   raise 'metadata.yaml not found' unless File.exist?('metadata.yaml')
   raise 'lib/ not found — run rake install first' unless File.exist?('lib')
 
+  metadata = YAML.safe_load(File.read('metadata.yaml'))
+  # Validated before anything is generated, so a bad entry fails fast.
+  extra_steps = woodpecker_extra_steps(metadata)
+
   all_images = build_objects_array(
-    metadata: YAML.safe_load(File.read('metadata.yaml')),
+    metadata: metadata,
     default_metadata: YAML.safe_load(File.read('lib/metadata-defaults.yaml')),
     # The pipeline is generated from the whole matrix even if VERSION or
     # VARIANT is set in the calling environment.
@@ -201,6 +205,9 @@ task :woodpecker do
       ]
     }
   end
+
+  # Steps declared under woodpecker: in metadata.yaml (woodpecker_extra_steps.rb).
+  steps = wire_woodpecker_extra_steps(steps, extra_steps)
 
   FileUtils.mkdir_p('.woodpecker')
   File.open('.woodpecker/build.yaml', 'w') do |f|

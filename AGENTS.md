@@ -153,6 +153,13 @@ Keep these properties when editing `lib/tasks/woodpecker.rake`:
   `export VARIANT=''` (an empty `VARIANT` selects only the base image).
   Without it they built and pushed every variant of their version, racing
   the variant steps (TUX-6951).
+- Every `depends_on` entry that can name a step absent from the event must
+  be `optional: true`. Woodpecker drops steps whose `when:` does not match
+  before resolving dependencies and fails the pipeline on a missing one
+  (3.20.1 `convertDAGToStages`, `ErrStepMissingDependency`). This bites the
+  extra-step wiring (`lib/woodpecker_extra_steps.rb`): a post step depends on
+  every `tag-*` step, but a `v18` tag has no `tag-17-*`. Optional
+  dependencies need Woodpecker 3.15+.
 - Only **rebuild** steps set `CRUCIBLE_SKIP_UNCHANGED`. Tag steps must always
   push: a tag is an explicit release, and skipping it would leave the git tag
   pointing at nothing new with a green pipeline.
