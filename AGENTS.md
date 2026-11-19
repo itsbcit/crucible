@@ -26,6 +26,31 @@ per-version Woodpecker step built every version (TUX-6950). It moved to
 `lib/filter_images.rb`, applied by `build_objects_array`, in v1.4.8. Callers
 that need the whole matrix pass `filter: false`, as `rake woodpecker` does.
 
+## Tests
+
+`ruby test/all.rb` runs the minitest suite in `test/`. It needs Ruby and the
+`minitest` gem only (no podman, trivy, skopeo or network), takes a few
+seconds, and must pass before a release. Each test runs in its own temp
+directory, because `ContainerImage` reads and writes `.build_id` in the
+working directory. `generate_pipeline` runs the real `rake woodpecker` in a
+scratch consumer repo (the `Rakefile` plus `lib/`), so the pipeline tests
+also exercise the Rakefile's loader.
+
+`test/woodpecker_test.rb` pins the generated-pipeline properties listed
+below. When you change one deliberately, change its test in the same commit.
+When you fix a bug, add a test that fails without the fix.
+
+minitest is a bundled gem: present in a normal Ruby install (macOS rbenv),
+but missing from the woodpecker-crucible image (Ruby 4.0, no locale set) and
+from AlmaLinux's ruby package. To check against CI's Ruby, run it in a
+throwaway container:
+
+```bash
+podman run --rm -v "$PWD":/src:ro,Z -w /src --entrypoint sh \
+  bcit.io/library/woodpecker-crucible:latest \
+  -c 'gem install --no-document minitest >/dev/null && ruby test/all.rb'
+```
+
 ## A fix here reaches nobody until a release is cut
 
 Consumers do not track `master`. `rake install` / `rake update` download from:
@@ -50,6 +75,7 @@ previous release's name. Name both assets correctly on disk and pass them to
 `gh release create` in one command:
 
 ```bash
+ruby test/all.rb
 git tag vX.Y.Z && git push origin vX.Y.Z
 mkdir -p /tmp/rel && git archive vX.Y.Z | tar -x -C /tmp/rel
 grep -q "'vX.Y.Z'" /tmp/rel/lib/version.rb || echo 'STAMP WRONG, do not publish'

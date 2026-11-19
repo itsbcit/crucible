@@ -515,6 +515,12 @@ Every GitHub release must include two assets that `rake install` and `rake updat
 1. **`crucible-lib.zip`** — a zip of the `lib/` directory contents (flat `.rb`/`.yaml` files at root, `tasks/` and `snippets/` subdirectories preserved)
 2. **`Rakefile`** — the current `Rakefile` from the repo root
 
+Run the tests first. They need Ruby and the `minitest` gem only (no podman, trivy, skopeo or network), and nothing under `test/` ships to consumers:
+
+```bash
+ruby test/all.rb
+```
+
 To create a release:
 
 ```bash
