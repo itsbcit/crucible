@@ -217,8 +217,11 @@ fleet-wide vulnerability rather than a local one.
 `dockerize` is the one that matters most: it is a Go binary, so it carries
 whatever Go stdlib CVEs its build toolchain had, and `rake scan` fails on it
 independently of the Alpine package set. 0.13.0 carried nine HIGH CVEs and
-was bumped to 0.15.1 on 2026-09-28. Check these against upstream when
-touching a release.
+was bumped to 0.15.1 on 2026-09-28. 0.15.1 (Go 1.27.0) then carried five HIGH
+stdlib CVEs and was bumped to 0.16.0 (Go 1.27.3) on 2026-11-19, which still
+has CVE-2026-97054 (fixed in Go 1.27.4) until upstream rebuilds. Check the Go
+version with `strings dockerize | grep -m1 -oE 'go1\.[0-9.]+'`. Check these
+against upstream when touching a release.
 
 Note that a consumer pinning one of these in its own `metadata.yaml` `vars:`
 overrides the default and must be bumped separately.

@@ -383,7 +383,7 @@ Variable: `tini_version` (default: `0.19.0`)
 
 Downloads and installs [dockerize](https://github.com/jwilder/dockerize) for template rendering and service readiness checks.
 
-Variable: `dockerize_version` (default: `0.13.0`)
+Variable: `dockerize_version` (default: `0.16.0`)
 
 ### labels
 
